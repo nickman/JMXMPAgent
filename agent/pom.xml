@@ -18,32 +18,32 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 		  <groupId>com.sun.jdmk</groupId>
 		  <artifactId>jmx-optional</artifactId>
-		  <version>${jmx-optional.version}</version>
 		</dependency>
 
 		<dependency>
 		  <groupId>ch.ethz.ganymed</groupId>
 		  <artifactId>ganymed-ssh2</artifactId>
-		  <version>${ganymed.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j</artifactId>					
 		</dependency>
 
 		<dependency>
 		  <groupId>org.json</groupId>
 		  <artifactId>json</artifactId>
-		  <version>${json.version}</version>
 		</dependency>
 		
 		<dependency>
 		  <groupId>org.javassist</groupId>
 		  <artifactId>javassist</artifactId>
-		  <version>${javassist.version}</version>
 		</dependency>
 
 	</dependencies>
@@ -89,14 +89,12 @@
 				      <addClasspath>true</addClasspath>
 				  </manifest>
 				  <manifestEntries>
-				  		<!--
-					    		<Main-Class>org.helios.apmrouter.Agent</Main-Class> 
-					    		<Premain-Class>org.helios.apmrouter.Agent</Premain-Class>
-				            	<Agent-Class>org.helios.apmrouter.Agent</Agent-Class>
+					    		<Main-Class>com.heliosapm.jmxmp.AgentCmdLine</Main-Class> 
+					    		<Premain-Class>com.heliosapm.jmxmp.Agent</Premain-Class>
+				            	<Agent-Class>com.heliosapm.jmxmp.Agent</Agent-Class>
 				            	<Can-Redefine-Classes>true</Can-Redefine-Classes>
 				            	<Can-Retransform-Classes>true</Can-Retransform-Classes>
 				            	<Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>				    
-				        -->
 				  </manifestEntries>
 			      </archive>
 			  </configuration>
@@ -113,6 +111,7 @@
 	                    <goal>shade</goal>
 	                  </goals>
 	                  <configuration>
+	                  	
 	                    <artifactSet>
 	                      <excludes>
 	 						<exclude>META-INF/*.SF</exclude>
@@ -126,6 +125,7 @@
 	              		<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 	              		<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
 	              		<includePluginDependencies>false</includePluginDependencies>
+	              		
 	            		<transformers>
 	                    	<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"></transformer>
 	                    	<transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer">
@@ -135,10 +135,11 @@
 	                		</transformer>
 	                    </transformers>
 	                  </configuration>
+	                  
 	                </execution>
 	              </executions>
             </plugin>     
-
+			<!-- 
 	      <plugin>
 	        <groupId>org.sonatype.plugins</groupId>
 	        <artifactId>jarjar-maven-plugin</artifactId>
@@ -150,7 +151,6 @@
 	              <goal>jarjar</goal>
 	            </goals>
 	            <configuration>
-	            	<!--
 	              <includes>
 	                <include>asm:asm</include>
 	                <include>org.sonatype.sisu.inject:cglib</include>
@@ -168,12 +168,11 @@
 	                  <pattern>com.google.inject.**</pattern>
 	                </keep>
 	              </rules>
-	              	-->
 	            </configuration>
 	          </execution>
 	        </executions>
 	      </plugin>            	
-			
+			-->
 		</plugins>
 	</build>
 </project>

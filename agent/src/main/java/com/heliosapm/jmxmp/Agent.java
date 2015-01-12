@@ -34,6 +34,8 @@ import java.lang.instrument.Instrumentation;
 
 public class Agent {
 
+	/** The agent bootstrap class */
+	public static final String BOOT_CLASS = "com.heliosapm.jmxmp.AgentBoot";
 	
 	
 	public static void main(final String[] args) {
@@ -43,21 +45,27 @@ public class Agent {
 	}
 	
 	public static void premain(final String agentArgs, final Instrumentation inst) {
-		// install JMXMP server
-		// 
+		try {
+			ClassLoader cl = Agent.class.getClassLoader();
+			Class<?> bootClass = Class.forName(BOOT_CLASS, true, cl);
+			bootClass.getDeclaredMethod("boot", ClassLoader.class, String.class, Instrumentation.class).invoke(null, cl, agentArgs, inst);
+		} catch (Throwable ex) {
+			ex.printStackTrace(System.err);
+		}
 	}
 
 	public static void premain(final String agentArgs) {
-		
+		premain(agentArgs, null);
 	}
 	
 	public static void agentmain(final String agentArgs, final Instrumentation inst) {
-		
+		premain(agentArgs, inst);
 	}
 
 	public static void agentmain(final String agentArgs) {
-		
+		premain(agentArgs, null);
 	}
+	
 	
 	private Agent() {}
 	

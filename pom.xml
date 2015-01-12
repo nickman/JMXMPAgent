@@ -21,6 +21,7 @@
 		<javassist.version>3.18.2-GA</javassist.version>
 		<ganymed.version>262</ganymed.version>
 		<json.version>20140107</json.version>
+		<args4j.version>2.0.16</args4j.version>
 		<!-- Plugin Versions -->
 		<jarjar-plugin.version>1.9</jarjar-plugin.version>
 		<jar-plugin.version>2.3</jar-plugin.version>
@@ -55,6 +56,13 @@
 			  <artifactId>ganymed-ssh2</artifactId>
 			  <version>${ganymed.version}</version>
 			</dependency>
+
+			<dependency>
+				<groupId>args4j</groupId>
+				<artifactId>args4j</artifactId>					
+				<version>${args4j.version}</version>
+			</dependency>
+
 
 			<dependency>
 			  <groupId>org.json</groupId>
