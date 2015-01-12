@@ -22,6 +22,8 @@
  */
 package com.heliosapm.jmxmp;
 
+import java.lang.management.ManagementFactory;
+
 /**
  * <p>Title: ICommand</p>
  * <p>Description: Defines a command line option command impl</p> 
@@ -31,6 +33,10 @@ package com.heliosapm.jmxmp;
  */
 
 public interface ICommand {
+	
+	/** This JVM's PID */
+	public static final String PID = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+	
 	/**
 	 * Invokes the command
 	 * @param args The command arguments

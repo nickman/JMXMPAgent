@@ -28,6 +28,12 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import com.heliosapm.jmxmp.Agent;
+import com.heliosapm.jmxmp.AgentBoot;
 
 /**
  * <p>Title: BaseWrappedClass</p>
@@ -50,19 +56,33 @@ public abstract class BaseWrappedClass {
 	/** Thread local to save (and restore) a calling thread's context classloader */
 	protected static final ThreadLocal<ClassLoader> savedState = new ThreadLocal<ClassLoader>();
 	
+	/** Static class logger */
+	protected static final Logger log = Logger.getLogger(AgentBoot.class.getName());
 	
+
+	
+	
+	
+	/**
+	 * Saves the calling thread's context class loader and replaces it with the VM class loader if it's thread local saved state is null
+	 * @param classLoader The classloader to push, or the attach class loader if null
+	 */
+	public static void pushCl(final ClassLoader classLoader) {
+		if(savedState.get()==null) {
+			savedState.set(Thread.currentThread().getContextClassLoader());
+			ClassLoader cl = classLoader==null ? VirtualMachineBootstrap.attachClassLoader.get() : classLoader;
+			Thread.currentThread().setContextClassLoader(cl==null ? ClassLoader.getSystemClassLoader() : cl);
+			//log("Pushed ClassLoader [" + Thread.currentThread().getContextClassLoader() + "]");
+		}
+	}
 	
 	/**
 	 * Saves the calling thread's context class loader and replaces it with the VM class loader if it's thread local saved state is null
 	 */
 	public static void pushCl() {
-		if(savedState.get()==null) {
-			savedState.set(Thread.currentThread().getContextClassLoader());
-			ClassLoader cl = VirtualMachineBootstrap.attachClassLoader.get();
-			Thread.currentThread().setContextClassLoader(cl==null ? ClassLoader.getSystemClassLoader() : cl);
-			//log("Pushed ClassLoader [" + Thread.currentThread().getContextClassLoader() + "]");
-		}
+		pushCl(null);
 	}
+	
 	
 	/**
 	 * Restored the calling thread's context class loader if it's thread local saved state is not null.
@@ -201,12 +221,12 @@ public abstract class BaseWrappedClass {
 	}
 	
 	/**
-	 * Simple out formatted logger
+	 * JUL fine logger
 	 * @param fmt The format of the message
 	 * @param args The message arguments
 	 */
 	public static void log(String fmt, Object...args) {
-		System.out.println(String.format(fmt, args));
+		log.fine(String.format(fmt, args));
 	}
 	
 	/**

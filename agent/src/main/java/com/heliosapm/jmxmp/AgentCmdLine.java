@@ -22,13 +22,17 @@
  */
 package com.heliosapm.jmxmp;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 /**
  * <p>Title: AgentCmdLine</p>
@@ -40,16 +44,22 @@ import org.kohsuke.args4j.CmdLineParser;
 
 public class AgentCmdLine {	
 	/** Static class logger */
-	protected static final Logger log = Logger.getLogger(AgentCmdLine.class.getName());
+	protected static final Logger log = Logger.getLogger(AgentBoot.class.getName());
 	protected static final Set<String> COMMANDS = new HashSet<String>(Arrays.asList(
 			"listjvms", 				// Lists the JVMs that are currently running
 			"install"
 	));
-	@Argument(index=0, usage="The command to execute")
+	
+	@Argument(index=0, usage="The command to execute (required)", required=true)
 	/** The command to execute */
 	protected String command = null;
 	
+	@Option(name="-level", usage="-level <JUL Logging Level> (optional)")
+	/** Option to set the agent logger level */
+	protected String level= null;
 	
+	
+	protected static String USAGE = null;
 
 	/**
 	 * Command line entry point
@@ -59,22 +69,47 @@ public class AgentCmdLine {
 		AgentCmdLine cl = new AgentCmdLine();		
 		CmdLineParser parser = new CmdLineParser(cl);
 		try {
-			if(args.length==0) {
-				parser.printUsage(System.out);
-				return;
-			}
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			parser.printUsage(baos);
+			baos.flush();
+			USAGE = new String(baos.toByteArray(), Charset.defaultCharset());
 			parser.parseArgument(args);
+			if(args.length==0) {
+				System.out.println(USAGE);
+				return;
+			}			
 			cl.run(args);
 		} catch (Exception ex) {
 			System.err.println(ex.getMessage());
-			parser.printUsage(System.err);
+			System.err.println(USAGE);
 		}
 	}
 	
 	protected void run(final String...args) {
-		if(COMMANDS.contains(command.toLowerCase())) {
-			Command com = Command.valueOf(command.toUpperCase());
-			System.out.println(com.execute(args));
+		try {
+			if(level!=null) {
+				Level l = Level.parse(level);
+				AgentBoot.setLoggerLevel(l);
+				log.info("Agent Logger set to [" + l + "]");
+			}
+		} catch (Exception ex) {
+			System.err.println("Invalid Logging Level [" + level + "]. Ignoring.");
+		}
+		Command com = null;
+		try {
+			com = Command.valueOf(command.toUpperCase());
+		} catch (Exception ex) {
+			System.err.println("Invalid Command [" + command + "]");
+			System.err.println(USAGE);
+			return;
+		}
+		if(COMMANDS.contains(command.toLowerCase())) {			
+			// New args without the command
+			final int nal = args.length-1;
+			log.log(Level.FINE, "Invoking Command: {0}, NonComArgCount: {1}, Args: {2}", new Object[]{com.name(), nal, Arrays.toString(args)});
+			String[] noCmdArgs = new String[nal];
+			if(nal>0) System.arraycopy(args, 1, noCmdArgs, 0, nal);
+			System.out.println(com.execute(noCmdArgs));
 		}
 	}
 

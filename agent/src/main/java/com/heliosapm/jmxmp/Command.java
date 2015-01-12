@@ -22,12 +22,14 @@
  */
 package com.heliosapm.jmxmp;
 
+import java.lang.management.ManagementFactory;
 import java.util.Properties;
 
 import javax.management.remote.JMXServiceURL;
 
 import com.heliosapm.attachme.VirtualMachine;
 import com.heliosapm.attachme.VirtualMachineDescriptor;
+import com.heliosapm.jmxmp.commands.ListJVMsCommand;
 
 /**
  * <p>Title: Command</p>
@@ -47,48 +49,13 @@ public enum Command implements ICommand {
 	
 	final ICommand command;
 	
+	
 	@Override
 	public String execute(String... args) {
 		return command.execute(args);
 	}
 	
 	
-	public static class ListJVMsCommand implements ICommand {
-		@Override
-		public String execute(String... args) {
-			final StringBuilder b = new StringBuilder();
-			try {
-				for(VirtualMachineDescriptor vmd: VirtualMachine.list()) {
-					b.append(vmd.id()).append(" : ").append(vmd.displayName()).append(" : ");
-					try {
-						VirtualMachine vm = null;
-						try {
-							vm = vmd.provider().attachVirtualMachine(vmd.id());
-							final Properties sysProps = vm.getSystemProperties();
-							for(String key: sysProps.stringPropertyNames()) {
-								if(key.startsWith("com.heliosapm.jmx")) {
-									b.append("\n\t").append(key).append(":").append(sysProps.get(key));
-								}
-							}
-							try {
-								JMXServiceURL jurl = vm.getJMXServiceURL();
-								b.append("\n\t").append("jmxserviceurl").append(":").append(jurl);
-							} catch (Exception x) {
-								/* No Op */
-							}
-						} finally {
-							if(vm!=null) try { vm.detach(); } catch (Exception x) {/* No Op */}
-						}
-					} catch (Exception ex) {
-						b.append("Failed to attach");
-					}
-				}
-			} catch (Exception ex) {
-				return "ListJVMs failed:" + ex;
-			}
-			return b.toString();
-		}
-	}
 	
 	public static class InstallCommand implements ICommand {
 		@Override

@@ -23,12 +23,17 @@
 package com.heliosapm.jmxmp;
 
 import java.io.Closeable;
+import java.io.OutputStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.ErrorManager;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -73,7 +78,19 @@ public class AgentBoot {
 	private static final List<Closeable> CLOSEABLES = new ArrayList<Closeable>();
 	
 	/** Static class logger */
-	protected static final Logger log = Logger.getLogger(Agent.class.getName());
+	protected static final Logger log = Logger.getLogger(AgentBoot.class.getName());
+	
+	static {
+		if(log.getHandlers().length==0) {
+			log.addHandler(new ConsoleHandler(){
+				@Override
+				protected synchronized void setOutputStream(OutputStream out) throws SecurityException {
+					super.setOutputStream(System.out);
+					setLevel(Level.ALL);
+				}
+			});
+		}
+	}
 	
 	public static void boot(final ClassLoader classLoader, final String agentArgs, final Instrumentation instrumentation) {
 		AGENT_CL = classLoader;
@@ -99,6 +116,17 @@ public class AgentBoot {
 			}
 		}
 
+	}
+	
+	/**
+	 * Sets the logger level and updates the level of the handlers to the same
+	 * @param level the logger level
+	 */
+	protected static void setLoggerLevel(final Level level) {
+		if(level!=null) {
+			LOG_LEVEL = level;
+			log.setLevel(LOG_LEVEL);
+		}
 	}
 	
 	protected static String[] trimSplit(final String value, final Pattern splitter) {

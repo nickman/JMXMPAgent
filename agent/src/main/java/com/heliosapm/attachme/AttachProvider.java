@@ -61,7 +61,7 @@ public class AttachProvider extends BaseWrappedClass {
 	public static AttachProvider getInstance(Object delegate) {
 		if(delegate==null) throw new IllegalArgumentException("The passed AttachProvider delegate was null", new Throwable());
 		if(!VirtualMachineBootstrap.getInstance().isInstanceOf(delegate, VirtualMachineBootstrap.ATTACH_PROVIDER_CLASS)) {
-			throw new IllegalArgumentException("The passed delegate of type [" + delegate.getClass().getName() + "] was not of the type [" + VirtualMachineBootstrap.ATTACH_PROVIDER_CLASS + "]", new Throwable());
+			throw new IllegalArgumentException("The passed delegate of type [" + delegate.getClass().getName() + "--->" + delegate.getClass().getClassLoader() + "] was not of the type [" + VirtualMachineBootstrap.ATTACH_PROVIDER_CLASS + "--->" + VirtualMachineBootstrap.ATTACH_PROVIDER_CLASS.getClass().getClassLoader() + "]", new Throwable());
 		}		
 		int id = System.identityHashCode(delegate);
 		AttachProvider ap = apInstances.get(id);
@@ -163,13 +163,15 @@ public class AttachProvider extends BaseWrappedClass {
 	static void init() {
 		VirtualMachineBootstrap.findAttachAPI();
 		try {
-			pushCl();			
-			log("Loading Attach Provider with [" + Thread.currentThread().getContextClassLoader() + "]");
-			Class<?> clazz = Thread.currentThread().getContextClassLoader().loadClass(VirtualMachineBootstrap.ATTACH_PROVIDER_CLASS);
+			pushCl(ClassLoader.getSystemClassLoader());			
+			log("Loading Attach Provider with [" + Thread.currentThread().getContextClassLoader() + "]");			
+			Class<?> clazz = Class.forName(VirtualMachineBootstrap.ATTACH_PROVIDER_CLASS, true, ClassLoader.getSystemClassLoader()); 
+					//Thread.currentThread().getContextClassLoader().loadClass(VirtualMachineBootstrap.ATTACH_PROVIDER_CLASS);
 			Method m = clazz.getDeclaredMethod("providers");
 			m.setAccessible(true);
 			List<?> aps = (List<?>)m.invoke(null);
 			for(Object del: aps) {
+				log("Loading Provider.....\n\tCurrent CL: %s\n\tObj CL: %s", ClassLoader.getSystemClassLoader(), del.getClass().getClassLoader());
 				getInstance(del);
 			}			
 		} catch (Exception e) {

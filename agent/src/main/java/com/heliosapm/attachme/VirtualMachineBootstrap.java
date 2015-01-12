@@ -26,6 +26,8 @@ package com.heliosapm.attachme;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -113,7 +115,7 @@ public class VirtualMachineBootstrap extends BaseWrappedClass {
 	protected VirtualMachineBootstrap(String urlLocation) {
 		
 		findAttachAPI(urlLocation);
-		ClassLoader cl = attachClassLoader.get();
+		ClassLoader cl = ClassLoader.getSystemClassLoader();
 		try {
 			classCache.put(VM_CLASS, Class.forName(VM_CLASS, true, cl));
 			classCache.put(VM_DESC_CLASS, Class.forName(VM_DESC_CLASS, true, cl));
@@ -198,6 +200,8 @@ public class VirtualMachineBootstrap extends BaseWrappedClass {
 		for(String s: ALT_LOCS) {
 			altLocs.add(JAVA_HOME + s + JAR_NAME);
 		}
+		log("Java Home:" + JAVA_HOME);
+		log("AltLocations:" + altLocs);
 		for(String s: altLocs) {
 			try {
 				File toolsLoc = new File(s);
@@ -206,7 +210,8 @@ public class VirtualMachineBootstrap extends BaseWrappedClass {
 					URL url = toolsLoc.toURI().toURL();
 					URLClassLoader ucl = new URLClassLoader(new URL[]{url}, ClassLoader.getSystemClassLoader().getParent());
 					if(inClassPath(ucl)) {
-						//log("Attach API Found And Loaded [" + toolsLoc + "]");	
+						log("Attach API Found And Loaded [" + toolsLoc + "]");
+						addURL(url);
 //						attachClassLoader.set(ucl);
 //						BaseWrappedClass.savedState.set(null);						
 						return;
@@ -220,6 +225,18 @@ public class VirtualMachineBootstrap extends BaseWrappedClass {
 			throw new RuntimeException("Failed to find the Atach API. Please add tools.jar to the classpath", new Throwable());
 		}
 	}
+	
+	  private static void addURL(final URL url) throws SecurityException, 
+	  NoSuchMethodException, IllegalArgumentException, IllegalAccessException, 
+	  InvocationTargetException {
+	    URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
+	    Class<?> sysclass = URLClassLoader.class;
+	    
+	    Method method = sysclass.getDeclaredMethod("addURL", URL.class);
+	    method.setAccessible(true);
+	    method.invoke(sysloader, new Object[]{ url }); 
+	   
+	  }	
 	
 	/**
 	 * Quickie command line test
