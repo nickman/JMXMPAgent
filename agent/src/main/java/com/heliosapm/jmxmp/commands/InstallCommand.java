@@ -20,33 +20,46 @@
  * under the License.
  *
  */
-package com.heliosapm.jmxmp;
+package com.heliosapm.jmxmp.commands;
 
-import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
+import com.heliosapm.jmxmp.ICommand;
 
 /**
- * <p>Title: ICommand</p>
- * <p>Description: Defines a command line option command impl</p> 
+ * <p>Title: InstallCommand</p>
+ * <p>Description: Command to install the agent into a running JVM</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.jmxmp.ICommand</code></p>
+ * <p><code>com.heliosapm.jmxmp.commands.InstallCommand</code></p>
  */
+@Parameters(commandDescription = "Installs the agent into a running JVM", commandNames="install")
+public class InstallCommand implements ICommand {
+	
+	@Parameter(names = "-domain", help=true)
+	ArrayList<String> domains = null;
 
-public interface ICommand {
-	
-	/** This JVM's PID */
-	public static final String PID = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+
+	/**
+	 * {@inheritDoc}
+	 * @see com.heliosapm.jmxmp.ICommand#execute(java.lang.String[])
+	 */
+	@Override
+	public String execute(String... args) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 	/**
-	 * Invokes the command
-	 * @param args The command arguments
-	 * @return the command response
+	 * {@inheritDoc}
+	 * @see com.heliosapm.jmxmp.ICommand#getDescription()
 	 */
-	public String execute(String...args);
+	@Override
+	public String getDescription() {		
+		return "Installs the agent into a running JVM";
+	}
 	
-	/**
-	 * Returns the command description
-	 * @return the command description
-	 */
-	public String getDescription();
+
 }

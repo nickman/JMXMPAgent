@@ -24,9 +24,8 @@
  */
 package com.heliosapm.jmxmp.commands;
 
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
 import com.heliosapm.attachme.VirtualMachine;
 import com.heliosapm.attachme.VirtualMachineDescriptor;
 import com.heliosapm.jmxmp.ICommand;
@@ -38,18 +37,21 @@ import com.heliosapm.jmxmp.ICommand;
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>com.heliosapm.jmxmp.commands.ListJVMsCommand</code></p>
  */
-
+@Parameters(commandDescription = "Lists the currently running JVMs", commandNames="list")
 public class ListJVMsCommand implements ICommand {
 
 	/** Option to print the full VM display */
-	@Option(name="-full", usage="Include to print the full VM display")	
+	@Parameter(names="-full", arity=0, description="Include to print the full VM display", required=false)
 	protected boolean full = false;
 	/** Option to print the JMX/RMI URL */
-	@Option(name="-jmxconn", usage="Include to print the JMX/RMI URL")	
+	@Parameter(names="-jmxconn", arity=0, description="Include to print the JMX/RMI URL", required=false)
 	protected boolean jmxUrl = false;
+	@Parameter(names="-match", arity=1, description="Specify a regex to filter JVMs by JVM display", required=false)
+	protected String match = ".*";
+	
 	
 	/** The options parser */
-	final CmdLineParser parser = new CmdLineParser(this);
+//	final CmdLineParser parser = new CmdLineParser(this);
 
 	/**
 	 * Creates a new ListJVMsCommand
@@ -57,6 +59,16 @@ public class ListJVMsCommand implements ICommand {
 	public ListJVMsCommand() {
 
 	}
+	
+	/**
+	 * {@inheritDoc}
+	 * @see com.heliosapm.jmxmp.ICommand#getDescription()
+	 */
+	@Override
+	public String getDescription() {		
+		return "Lists accessible running JVMs";
+	}
+
 	
 	private void reset() {
 		full = false;
@@ -66,12 +78,12 @@ public class ListJVMsCommand implements ICommand {
 	@Override
 	public String execute(String... args) {
 		reset();
-		try {
-			parser.parseArgument(args);
-		} catch (Exception ex) {
-			ex.printStackTrace(System.err);
-			throw new RuntimeException("Failed to parse options in [" + getClass().getName() + "]", ex);
-		}
+//		try {
+//			parser.parseArgument(args);
+//		} catch (Exception ex) {
+//			ex.printStackTrace(System.err);
+//			throw new RuntimeException("Failed to parse options in [" + getClass().getName() + "]", ex);
+//		}
 		final StringBuilder b = new StringBuilder();
 		try {
 			for(VirtualMachineDescriptor vmd: VirtualMachine.list()) {
