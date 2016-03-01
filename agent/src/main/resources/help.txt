@@ -1,0 +1,10 @@
+JMXMPAgent Usage:
+	java -jar helios-jmxmp-agent.jar <options>
+Options:
+	-list [<regex>] : lists the visible JVMs that the agent can be installed to. Optional Regex applied to JVM App Name
+	-install <pid> <Specs>
+Specs:
+	A spec defines the MBeanServer (JMX domain) to expose, the port to listen on and the network binding interface to bind to.
+	The spec is <Domain>:<Port>:<Interface>
+	Multiple specs can be defined and should be coma separated.
+	e.g.:  DefaultDomain:8334:127.0.0.1,jboss:8335:0.0.0.0

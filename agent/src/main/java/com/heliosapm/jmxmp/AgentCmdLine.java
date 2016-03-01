@@ -22,12 +22,17 @@
  */
 package com.heliosapm.jmxmp;
 
-import java.util.ArrayList;
+import java.lang.management.ManagementFactory;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
-import com.beust.jcommander.IDefaultProvider;
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
+import com.heliosapm.shorthand.attach.vm.VirtualMachine;
+import com.heliosapm.shorthand.attach.vm.VirtualMachineDescriptor;
+import com.heliosapm.utils.lang.StringHelper;
+import com.heliosapm.utils.url.URLHelper;
 
 /**
  * <p>Title: AgentCmdLine</p>
@@ -40,23 +45,15 @@ import com.beust.jcommander.Parameter;
 public class AgentCmdLine {	
 	/** Static class logger */
 	protected static final Logger log = Logger.getLogger(AgentBoot.class.getName());
+	/** This JVM's PID */
+	public static final String PID = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+	/** The command name for list */
+	public static final String LIST_CMD = "-list";
+	/** The command name for install */
+	public static final String INSTALL_CMD = "-install";
 	
-	public static JCommander jc = new JCommander();
-	
-	/*
-	 * JMXDomain,port,iface
-	 * Supress Batch Service Install
-	 */
-	
-//	@Argument(index=0, metaVar="command", usage="The command to execute (required)", required=true, handler=SubCommandHandler.class)
-//	@SubCommands({
-//		@SubCommand(name="help", impl=HelpCommand.class),
-//		@SubCommand(name="listjvms", impl=ListJVMsCommand.class),
-//		@SubCommand(name="install", impl=InstallCommand.class)
-//	})
-	
-	
-	
+	/** The agent property set when the JMXMP agent has been installed */
+	public static final String JMXMP_INSTALLED_PROP = "com.heliosapm.jmxmp.installed";
 	
 
 	/**
@@ -65,67 +62,54 @@ public class AgentCmdLine {
 	 */
 	public static void main(String[] args) {
 		if(args==null || args.length==0) {
-			args = new String[]{"HELP"};
+			printHelp();
+			return;
 		}
 		try {
-			jc.setCaseSensitiveOptions(false);
-			for(Command c: Command.values()) {
-				jc.addCommand(c.command);
+			if(args[0].equalsIgnoreCase(LIST_CMD)) {
+				list(args.length > 1 ? args[1] : null);
 			}
-			jc.parse(args);
-//			command.execute(passOnArgs);
 		} catch (Exception ex) {
 			System.err.println(ex.getMessage());
 		}
 	}
 	
-//	public static String generateHelp(final String command) {
-//		final StringBuilder b = new StringBuilder();
-//		if(command==null || command.trim().isEmpty() || !Command.isCommand(command)) {
-//			b.append("\nCommands:");
-//			for(Command c: Command.values()) {
-//				b.append("\n\t").append(c.name()).append(":").append(c.getDescription());
-//			}
-//		} else {
-//			final Command comm = Command.command(command);
-//			b.append("Command: ").append(comm.name()).append("\n");
-////			final CmdLineParser parser = new CmdLineParser(comm);
-//			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//			parser.printUsage(baos);
-//			try {
-//				baos.flush();
-//				b.append(baos.toString(Charset.defaultCharset().name())).append("\n");
-//			} catch (Exception ex) {
-//				ex.printStackTrace(System.err);
-//				throw new RuntimeException(ex);
-//			}			
-//		}
-//		return b.toString();
-//	}
+	private static void printHelp() {
+		System.out.println(URLHelper.getTextFromURL(AgentCmdLine.class.getClassLoader().getResource("help.txt")));
+	}
 	
-//	protected void run(final String...args) {
-//		try {
-//			if(level!=null) {
-//				Level l = Level.parse(level);
-//				AgentBoot.setLoggerLevel(l);
-//				log.info("Agent Logger set to [" + l + "]");
-//			}
-//		} catch (Exception ex) {
-//			System.err.println("Invalid Logging Level [" + level + "]. Ignoring.");
-//		}
-//		Command com = null;
-//		try {
-//			com = Command.command(command.toUpperCase());
-//		} catch (Exception ex) {
-//			System.err.println("Invalid Command [" + command + "]");
-//			System.err.println(generateHelp(null));
-//			return;
-//		}
-//		final int nal = args.length-1;
-//		log.log(Level.FINE, "Invoking Command: {0}, NonComArgCount: {1}, Args: {2}", new Object[]{com.name(), nal, Arrays.toString(args)});
-//		String[] noCmdArgs = new String[nal];
-//		if(nal>0) System.arraycopy(args, 1, noCmdArgs, 0, nal);
-//		System.out.println(com.execute(noCmdArgs));
-//	}
+	private static void list(final String regex) {
+		Pattern p = null;
+		final Map<String, String> vms = new HashMap<String, String>();
+		try {
+			if(regex!=null && !regex.trim().isEmpty()) {
+				p = Pattern.compile(regex.trim(), Pattern.CASE_INSENSITIVE);
+			}
+		} catch (Exception ex) {
+			System.err.println("Invalid Regex [" + regex + "]. Exiting...");
+			System.exit(-3);
+		} 
+		for(final VirtualMachineDescriptor vmd: VirtualMachine.list()) {
+			if(PID.equals(vmd.id())) continue;
+			final String desc = vmd.displayName();
+			if(p!=null) {
+				if(!p.matcher(desc).matches()) continue;
+			}
+			VirtualMachine vm = null;
+			boolean installed = false;
+			try {
+				vm = vmd.provider().attachVirtualMachine(vmd);
+				final Properties ap = vm.getAgentProperties();
+				final Properties sp = vm.getSystemProperties();
+				installed = (ap.containsKey(JMXMP_INSTALLED_PROP) || sp.containsKey(JMXMP_INSTALLED_PROP));
+			} catch (Exception ex) {
+				/* No Op for now ? */
+			} finally {
+				if(vm!=null) try { vm.detach(); } catch (Exception x) {/* No Op */}
+			}
+			vms.put(vmd.id(), (installed ? "(JMXMP Agent Installed) " : "") + desc);
+		}
+		System.out.println(StringHelper.printBeanNames(vms));
+	}
 
 }
