@@ -1,0 +1,130 @@
+[
+  {
+    "test" : "test3ParamsNoPref",
+    "spec" : "8334:127.0.0.1:DefaultDomain",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },
+  {
+    "test" : "test3ParamsNoPrefMulti",
+    "spec" : "8334:127.0.0.1:DefaultDomain,8335:0.0.0.0:jboss",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      },
+      {
+        "port" : 8335,
+        "iface" : "0.0.0.0",
+        "domain" : "jboss"
+      }      
+    ]
+  },
+  {
+    "test" : "test3ParamsAllPrefs",
+    "spec" : "-p=8334:-i=127.0.0.1:-d=DefaultDomain",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },  
+  {
+    "test" : "test3ParamsNoPortPref",
+    "spec" : "8334:-i=127.0.0.1:-d=DefaultDomain",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },
+  {
+    "test" : "test3ParamsNoPortDomainPref",
+    "spec" : "8334:-i=127.0.0.1:DefaultDomain",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },  
+  {
+    "test" : "test3ParamsNoPortIfacePref",
+    "spec" : "8334:127.0.0.1:-d=DefaultDomain",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },  
+  {
+    "test" : "test2ParamsNoDomain",
+    "spec" : "8334:127.0.0.1",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },  
+  {
+    "test" : "test2ParamsNoIface",
+    "spec" : "8334:-d=jboss",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "jboss"
+      }
+    ]
+  },  
+  {
+    "test" : "test2ParamsNoDomain",
+    "spec" : "8334:0.0.0.0",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "0.0.0.0",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },
+  {
+    "test" : "testPortOnly",
+    "spec" : "8334",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  },  
+  {
+    "test" : "testPortOnlyWithPref",
+    "spec" : "-p=8334",
+    "expected" : [
+      {
+        "port" : 8334,
+        "iface" : "127.0.0.1",
+        "domain" : "DefaultDomain"
+      }
+    ]
+  }  
+    
+]
+  

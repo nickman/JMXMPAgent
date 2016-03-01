@@ -23,12 +23,15 @@
 package com.heliosapm.jmxmp;
 
 import java.lang.management.ManagementFactory;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import com.heliosapm.jmxmp.spec.SpecField;
+import com.heliosapm.jmxmp.spec.SpecParser;
 import com.heliosapm.shorthand.attach.vm.VirtualMachine;
 import com.heliosapm.shorthand.attach.vm.VirtualMachineDescriptor;
 import com.heliosapm.utils.lang.StringHelper;
@@ -50,10 +53,13 @@ public class AgentCmdLine {
 	/** The command name for list */
 	public static final String LIST_CMD = "-list";
 	/** The command name for install */
-	public static final String INSTALL_CMD = "-install";
-	
+	public static final String INSTALL_CMD = "-install";	
 	/** The agent property set when the JMXMP agent has been installed */
 	public static final String JMXMP_INSTALLED_PROP = "com.heliosapm.jmxmp.installed";
+	/** The default binding interface */
+	public static final String DEFAULT_IFACE = "127.0.0.1";
+	/** The default JMX domain */
+	public static final String DEFAULT_DOMAIN = "DefaultDomain";
 	
 
 	/**
@@ -68,6 +74,15 @@ public class AgentCmdLine {
 		try {
 			if(args[0].equalsIgnoreCase(LIST_CMD)) {
 				list(args.length > 1 ? args[1] : null);
+			} else if(args[0].equalsIgnoreCase(INSTALL_CMD)) {
+				if(args.length < 3) {
+					System.err.println("Insufficient number of arguments for install command in argument list " + Arrays.toString(args));
+					System.exit(-4);					
+				}
+				install(args[1], args[2]);
+			} else {
+				System.err.println("Unrecognized command in argument list " + Arrays.toString(args));
+				System.exit(-2);
 			}
 		} catch (Exception ex) {
 			System.err.println(ex.getMessage());
@@ -78,6 +93,38 @@ public class AgentCmdLine {
 		System.out.println(URLHelper.getTextFromURL(AgentCmdLine.class.getClassLoader().getResource("help.txt")));
 	}
 	
+	/**
+	 * Installs the JMXMPAgent to the JVM identified by the passed {@link VirtualMachineDescriptor#id()}
+	 * @param pid The JVM id (the PID)
+	 * @param specs The JMXMP spec
+	 */
+	private static void install(final String pid, final String specs) {
+		final VirtualMachine vm;
+//		final Map<Integer, Map<SpecField, String>> parsedSpecs;
+		try {
+			vm = attach(pid);
+//			parsedSpecs = SpecParser.parseSpecs(specs);
+			
+		} catch (Exception ex) {
+			System.err.println("Failed to attach to JVM [" + pid + "]: " + ex.getMessage());
+			System.exit(-5);
+		}
+	}
+	
+	
+	/**
+	 * Attaches to the JVM with the passed {@link VirtualMachineDescriptor#id()}
+	 * @param pid The JVM id (the PID)
+	 * @return the VirtualMachine
+	 */
+	private static VirtualMachine attach(final String pid) throws Exception {
+		return VirtualMachine.attach(pid);
+	}
+	
+	/**
+	 * Lists the accessible JVMs on this host (not including this one)
+	 * @param regex An optional inclusive filtering regex applied to a JVM's {@link VirtualMachineDescriptor#displayName()} 
+	 */
 	private static void list(final String regex) {
 		Pattern p = null;
 		final Map<String, String> vms = new HashMap<String, String>();

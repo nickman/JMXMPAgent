@@ -5,6 +5,18 @@ Options:
 	-install <pid> <Specs>
 Specs:
 	A spec defines the MBeanServer (JMX domain) to expose, the port to listen on and the network binding interface to bind to.
-	The spec is <Domain>:<Port>:<Interface>
+	The spec is [-p=]<Port>[:[-i=]<Interface>][:[-d=]<Domain>]
+	The interface and domain are optional. 
+	The interface defaults to 127.0.0.1. 
+	The domain defaults to the platform MBeanServer (DefaultDomain).
 	Multiple specs can be defined and should be coma separated.
-	e.g.:  DefaultDomain:8334:127.0.0.1,jboss:8335:0.0.0.0
+	e.g.:  8334:127.0.0.1:DefaultDomain,8335:0.0.0.0:jboss
+
+Examples:
+
+Exit Codes:
+  -2 : Unrecognized command in argument list
+  -3 : Invalid regular expression provided for -list command
+  -4 : Insufficient number of arguments for install command 
+  -5 : Failed to attach to specified JVM
+  -6 : Invalid install JMXMP Spec
