@@ -25,21 +25,21 @@ package test.com.heliosapm.jmxmp;
 import java.util.EnumMap;
 import java.util.Map;
 
-import junit.framework.Assert;
-import junit.framework.AssertionFailedError;
-import junit.framework.TestCase;
-import junit.framework.TestResult;
-import junit.framework.TestSuite;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.AllTests;
 
+import com.heliosapm.jmxmp.AgentCmdLine;
 import com.heliosapm.jmxmp.spec.SpecField;
 import com.heliosapm.jmxmp.spec.SpecParser;
-import com.heliosapm.utils.url.URLHelper;
+
+import junit.framework.Assert;
+import junit.framework.AssertionFailedError;
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
 
 /**
  * <p>Title: JMXMPSpecParseTest</p>
@@ -67,7 +67,7 @@ public class JMXMPSpecParseTest extends BaseTest {
 	@Test
   public static TestSuite suite()  {
       final TestSuite suite = new TestSuite();
-      final JSONArray arr = new JSONArray(URLHelper.getTextFromURL(JMXMPSpecParseTest.class.getClassLoader().getResource("spectests.json")));
+      final JSONArray arr = new JSONArray(AgentCmdLine.getTextFromURL(JMXMPSpecParseTest.class.getClassLoader().getResource("spectests.json")));
       for(int i = 0; i < arr.length(); i++) {
       	final JSONObject testDef = arr.getJSONObject(i);
       	final TestCase test = new TestCase(testDef.getString(JSON_TEST)){

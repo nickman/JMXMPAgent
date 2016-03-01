@@ -26,9 +26,6 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.heliosapm.utils.lang.StringHelper;
-import com.heliosapm.utils.tuples.NVP;
-
 /**
  * <p>Title: SpecParser</p>
  * <p>Description: Parses and validates an array of specs</p> 
@@ -40,9 +37,9 @@ public class SpecParser {
 
 	public static Map<Integer, Map<SpecField, String>> parseSpecs(final String jmxmpSpecs) throws Exception {
 		final Map<Integer, Map<SpecField, String>> pspecs = new LinkedHashMap<Integer, Map<SpecField, String>>();
-		final String[] specs = StringHelper.splitString(jmxmpSpecs, SpecField.SPEC_DELIM);
+		final String[] specs = SpecField.splitString(jmxmpSpecs, SpecField.SPEC_DELIM, true);
 		for(String spec: specs) {
-			final String[] specFields = StringHelper.splitString(spec, SpecField.SPEC_FIELD_DELIM);
+			final String[] specFields = SpecField.splitString(spec, SpecField.SPEC_FIELD_DELIM, true);
 			if(specFields.length==0) throw new Exception("Invalid JMXMP install spec. Field count was 0");
 			final Map<SpecField, String> decodeds = new EnumMap<SpecField, String>(SpecField.class);			
 			for(int i = 0; i < specFields.length; i++) {
@@ -63,7 +60,7 @@ public class SpecParser {
 	}
 	
 	private static NVP<SpecField, String> parseSpecField(final int order, final String specField) throws Exception {
-		final String[] splitSpecField = StringHelper.splitString(specField, SpecField.SPEC_FIELD_PREFIX_DELIM);
+		final String[] splitSpecField = SpecField.splitString(specField, SpecField.SPEC_FIELD_PREFIX_DELIM, true);
 		NVP<SpecField, String> parsed = null;
 		SpecField sf = null;			
 		String specValue = null;

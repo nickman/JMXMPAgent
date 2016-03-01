@@ -22,7 +22,13 @@
  */
 package com.heliosapm.jmxmp;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,12 +36,8 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import com.heliosapm.jmxmp.spec.SpecField;
-import com.heliosapm.jmxmp.spec.SpecParser;
 import com.heliosapm.shorthand.attach.vm.VirtualMachine;
 import com.heliosapm.shorthand.attach.vm.VirtualMachineDescriptor;
-import com.heliosapm.utils.lang.StringHelper;
-import com.heliosapm.utils.url.URLHelper;
 
 /**
  * <p>Title: AgentCmdLine</p>
@@ -47,7 +49,7 @@ import com.heliosapm.utils.url.URLHelper;
 
 public class AgentCmdLine {	
 	/** Static class logger */
-	protected static final Logger log = Logger.getLogger(AgentBoot.class.getName());
+	protected static final Logger log = Logger.getLogger(AgentCmdLine.class.getName());
 	/** This JVM's PID */
 	public static final String PID = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 	/** The command name for list */
@@ -90,7 +92,7 @@ public class AgentCmdLine {
 	}
 	
 	private static void printHelp() {
-		System.out.println(URLHelper.getTextFromURL(AgentCmdLine.class.getClassLoader().getResource("help.txt")));
+		System.out.println(getTextFromURL(AgentCmdLine.class.getClassLoader().getResource("help.txt")));
 	}
 	
 	/**
@@ -103,6 +105,8 @@ public class AgentCmdLine {
 //		final Map<Integer, Map<SpecField, String>> parsedSpecs;
 		try {
 			vm = attach(pid);
+			final File f = new File(AgentCmdLine.class.getProtectionDomain().getCodeSource().getLocation().getFile());
+			vm.loadAgent(f.getAbsolutePath(), specs);
 //			parsedSpecs = SpecParser.parseSpecs(specs);
 			
 		} catch (Exception ex) {
@@ -156,7 +160,47 @@ public class AgentCmdLine {
 			}
 			vms.put(vmd.id(), (installed ? "(JMXMP Agent Installed) " : "") + desc);
 		}
-		System.out.println(StringHelper.printBeanNames(vms));
+		for(Map.Entry<String, String> entry: vms.entrySet()) {
+			String pid = entry.getKey();
+			final int pads = 10 - pid.length();
+			for(int i = 0; i < pads; i++) {
+				pid = pid.concat(" ");
+			}
+			System.out.println(pid + ": " + entry.getValue());
+		}		
 	}
+	
+	/**
+	 * Reads the content of a URL as text.
+	 * Copied from helios utils to avoid the dependency
+	 * @param url The url to get the text from
+	 * @return a string representing the text read from the passed URL
+	 */
+	public static String getTextFromURL(URL url) {
+		StringBuilder b = new StringBuilder();
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+		InputStream is = null;
+		URLConnection connection = null;
+		try {
+			connection = url.openConnection();
+			connection.connect();
+			is = connection.getInputStream();
+			isr = new InputStreamReader(is);
+			br = new BufferedReader(isr);
+			String line = null;
+			while((line=br.readLine())!=null) {
+				b.append(line).append("\n");
+			}
+			return b.toString();			
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to read source of [" + url + "]", e);
+		} finally {
+			if(br!=null) try { br.close(); } catch (Exception e) {/* No Op */}
+			if(isr!=null) try { isr.close(); } catch (Exception e) {/* No Op */}
+			if(is!=null) try { is.close(); } catch (Exception e) {/* No Op */}
+		}
+	}
+
 
 }

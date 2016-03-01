@@ -22,7 +22,8 @@
  */
 package com.heliosapm.jmxmp.spec;
 
-import com.heliosapm.utils.lang.StringHelper;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>Title: SpecField</p>
@@ -63,7 +64,7 @@ public enum SpecField {
 	public static SpecField decode(final String s) {			
 		final String pref;
 		if(s.indexOf(SPEC_FIELD_PREFIX_DELIM)!=-1) {
-			pref = StringHelper.splitString(s, SPEC_FIELD_PREFIX_DELIM)[0].trim().toLowerCase();
+			pref = splitString(s, SPEC_FIELD_PREFIX_DELIM, true)[0].trim().toLowerCase();
 		} else {
 			pref = s.trim().toLowerCase();
 		}
@@ -75,5 +76,54 @@ public enum SpecField {
 	
 	public final String prefId;
 	public final String defaultValue;
+	
+	/**
+	 * Optimized version of {@code String#split} that doesn't use regexps.
+	 * This function works in O(5n) where n is the length of the string to
+	 * split.
+	 * @param s The string to split.
+	 * @param c The separator to use to split the string.
+	 * @param trimBlanks true to not return any whitespace only array items
+	 * @return A non-null, non-empty array.
+	 * <p>Copied from <a href="http://opentsdb.net">OpenTSDB</a>.
+	 */
+	public static String[] splitString(final String s, final char c, final boolean trimBlanks) {
+		final char[] chars = s.toCharArray();
+		int num_substrings = 1;
+		final int last = chars.length-1;
+		for(int i = 0; i <= last; i++) {
+			char x = chars[i];
+			if (x == c) {
+				num_substrings++;
+			}
+		}
+		final String[] result = new String[num_substrings];
+		final int len = chars.length;
+		int start = 0;  // starting index in chars of the current substring.
+		int pos = 0;    // current index in chars.
+		int i = 0;      // number of the current substring.
+		for (; pos < len; pos++) {
+			if (chars[pos] == c) {
+				result[i++] = new String(chars, start, pos - start);
+				start = pos + 1;
+			}
+		}
+		result[i] = new String(chars, start, pos - start);
+		if(trimBlanks) {
+			int blanks = 0;
+			final List<String> strs = new ArrayList<String>(result.length);
+			for(int x = 0; x < result.length; x++) {
+				if(result[x].trim().isEmpty()) {
+					blanks++;
+				} else {
+					strs.add(result[x]);
+				}
+			}
+			if(blanks==0) return result;
+			return strs.toArray(new String[result.length - blanks]);
+		}
+		return result;
+	}
+	
 
 }

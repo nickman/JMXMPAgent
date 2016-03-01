@@ -25,29 +25,18 @@ package test.com.heliosapm.jmxmp;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import javax.management.Notification;
-import javax.management.NotificationFilter;
-import javax.management.NotificationListener;
-import javax.management.ObjectName;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -56,11 +45,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TestName;
-
-import ch.ethz.ssh2.signature.DSAPrivateKey;
-import ch.ethz.ssh2.signature.RSAPrivateKey;
-
-import com.heliosapm.utils.jmx.JMXHelper;
 
 /**
  * <p>Title: BaseTest</p>
@@ -168,65 +152,7 @@ public class BaseTest {
 	}
 	
 	
-	/**
-	 * Adds a notification listener to an MBean and waits for a number of notifications
-	 * @param objectName The ObjectName of the MBean to listen on notifications from
-	 * @param numberOfNotifications The number of notifications to wait for
-	 * @param filter An optional filter
-	 * @param waitTime The number of milliseconds to wait for
-	 * @param run An optional task to run once the listener has been registered
-	 * @return A set of the received notifications
-	 * @throws TimeoutException thrown when the wait period expires without all the expected notifications being received
-	 */
-	public static Set<Notification> waitForNotifications(final ObjectName objectName, final int numberOfNotifications, final NotificationFilter filter, final long waitTime, final Callable<?> run) throws TimeoutException {
-		final Set<Notification> notifs = new LinkedHashSet<Notification>();
-		final AtomicInteger count = new AtomicInteger(0);
-		final CountDownLatch latch = new CountDownLatch(numberOfNotifications);
-		final NotificationListener listener = new NotificationListener() {
-			@Override
-			public void handleNotification(final Notification notification, final Object handback) {
-				final int x = count.incrementAndGet();
-				if(x<=numberOfNotifications) {
-					notifs.add(notification);
-					latch.countDown();
-				}
-			}
-		};
-		try {
-			JMXHelper.getHeliosMBeanServer().addNotificationListener(objectName, listener, filter, null);
-			if(run!=null) {
-				run.call();
-			}
-			final boolean complete = latch.await(waitTime, TimeUnit.MILLISECONDS);
-			if(!complete) {
-				throw new TimeoutException("Request timed out. Notifications received: [" + notifs.size() + "]");
-			}
-			return notifs;
-		} catch (Exception ex) {			
-			if(ex instanceof TimeoutException) {
-				ex.printStackTrace(System.err);
-				throw (TimeoutException)ex;
-			}
-			throw new RuntimeException(ex);
-		} finally {
-			try { JMXHelper.getHeliosMBeanServer().removeNotificationListener(objectName, listener); } catch (Exception x) {/* No Op */}
-		}		
-	}
 	
-	/**
-	 * Adds a notification listener to an MBean and waits for a notification
-	 * @param objectName The ObjectName of the MBean to listen on notifications from
-	 * @param filter An optional filter
-	 * @param waitTime The number of milliseconds to wait for
-	 * @param run An optional task to run once the listener has been registered
-	 * @return the received notification
-	 * @throws TimeoutException thrown when the wait period expires without the expected notification being received
-	 */
-	public static Notification waitForNotification(final ObjectName objectName, final NotificationFilter filter, final long waitTime, final Callable<?> run) throws TimeoutException {
-		final Set<Notification> notif = waitForNotifications(objectName, 1, filter, waitTime, run);
-		if(notif.isEmpty()) throw new RuntimeException("No notification received");
-		return notif.iterator().next();
-	}
 	
 	/**
 	 * Compares two string maps for equality where both being null means null
@@ -373,35 +299,6 @@ public class BaseTest {
 	}
 	
 	
-	/**
-	 * Generate random RSA private key
-	 * @return the generated key
-	 */
-	public static RSAPrivateKey getRSAPrivateKey() {
-    final int N = 1500;
-    final BigInteger p = BigInteger.probablePrime(N / 2, rnd);
-    final BigInteger q = BigInteger.probablePrime(N / 2, rnd);
-    final BigInteger phi = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
-    final BigInteger n = p.multiply(q);
-    final BigInteger e = new BigInteger("65537");
-    final BigInteger d = e.modInverse(phi);
-    return new RSAPrivateKey(d, e, n);		
-	}
-	
-	/**
-	 * Generate random DSA private key
-	 * @return the generated key
-	 */
-	public static DSAPrivateKey getDSAPrivateKey() {
-    final int N = 1500;
-    final BigInteger p = BigInteger.probablePrime(N / 2, rnd);
-    final BigInteger q = BigInteger.probablePrime(N / 2, rnd);
-    final BigInteger phi = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
-    final BigInteger n = p.multiply(q);
-    final BigInteger e = new BigInteger("65537");
-    final BigInteger d = e.modInverse(phi);
-    return new DSAPrivateKey(d, e, n, BigInteger.ONE, BigInteger.TEN);		
-	}
 	
 
 }

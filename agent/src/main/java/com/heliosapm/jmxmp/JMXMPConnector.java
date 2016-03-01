@@ -24,14 +24,18 @@ package com.heliosapm.jmxmp;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.lang.management.ManagementFactory;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
+
+import com.heliosapm.jmxmp.spec.SpecField;
 
 /**
  * <p>Title: JMXMPConnector</p>
@@ -63,6 +67,30 @@ public class JMXMPConnector implements Closeable {
 	
 	/**
 	 * Creates a new JMXMPConnector
+	 * @param specs The command line supplied JMXMP parameters 
+	 * @throws Exception thrown if the connector server cannot be created 
+	 */
+	public JMXMPConnector(final Map<SpecField, String> specs) throws Exception {
+		this(specs.get(SpecField.IFACE), Integer.parseInt(specs.get(SpecField.PORT)), getMBeanServer(specs.get(SpecField.DOMAIN)));
+	}
+
+	/**
+	 * Returns the MBeanServer matching the passed domain, or null if one is not found
+	 * @param domain The JMX domain
+	 * @return the MBeanServer or null
+	 */
+	public static MBeanServer getMBeanServer(final String domain) {
+		if(domain.equals("DefaultDomain")) return ManagementFactory.getPlatformMBeanServer();
+		for(MBeanServer server: MBeanServerFactory.findMBeanServer(null)) {			
+			final String serverDomain = server.getDefaultDomain();
+			if(serverDomain==null && domain.equals("null")) return server;  // some custom MBeanServers create the platform with a null domain
+			if(server.getDefaultDomain().equals(domain)) return server;
+		}
+		return null;
+	}
+	
+	/**
+	 * Creates a new JMXMPConnector
 	 * @param bindAddress The connector server bind address
 	 * @param port The connector server listening port
 	 * @param server The MBeanServer the connector is exposing
@@ -72,7 +100,6 @@ public class JMXMPConnector implements Closeable {
 		String tmp = server.getDefaultDomain();
 		domain = (tmp==null || tmp.trim().isEmpty()) ? "DefaultDomain" : tmp;		
 		log = Logger.getLogger("jmxmp." + bindAddress + "." + port + "." + domain);
-		log.setLevel(AgentBoot.LOG_LEVEL);
 		this.bindAddress = bindAddress;
 		this.port = port;
 		this.server = server;
@@ -92,13 +119,35 @@ public class JMXMPConnector implements Closeable {
 	 */
 	public void start() throws Exception {
 		if(!connectorServer.isActive()) {
+			final Throwable[] exRef = new Throwable[1];
+			final boolean[] complete = new boolean[]{false};
+			final Thread starterThread = new Thread("JMXMPServer-Starter-Thread") {
+				@Override
+				public void run() {
+					try {
+						connectorServer.start();
+						log.info("Started JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]");
+						complete[0] = true;
+					} catch (Exception ex) {
+						log.log(Level.SEVERE, "Failed to start JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]", ex);
+						exRef[0] = ex;
+					}					
+				}
+			};
+			starterThread.setDaemon(true);
+			starterThread.start();
 			try {
-				connectorServer.start();
-				log.info("Started JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]");				
-			} catch (Exception ex) {
-				log.log(Level.SEVERE, "Failed to start JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]", ex);
-				throw ex;
-			}
+				starterThread.join(10000);
+				if(!complete[0]) {
+					if(exRef[0] != null) {
+						throw new Exception("Failed to start JMXMP server", exRef[0]);
+					} 
+					throw new Exception("JMXMP server not started after 10 secs.");
+				}
+			} catch (InterruptedException iex) {
+				// should not happen
+				throw new Exception("Thread interrupted while waiting for JMXMP server to start", iex);
+			}		
 		}
 	}
 	
