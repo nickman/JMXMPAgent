@@ -5,7 +5,7 @@ Options:
 	-install <pid> <Specs>
 Specs:
 	A spec defines the MBeanServer (JMX domain) to expose, the port to listen on and the network binding interface to bind to.
-	The spec is [-p=]<Port>[:[-i=]<Interface>][:[-d=]<Domain>]
+	The spec is [-p=]<Port>[:[-i=]<Interface>][:[-d=]<Domain>][:[-b=]<Enable(true)/Disable(false) Bulk JMX Service>]
 	The interface and domain are optional. 
 	The interface defaults to 127.0.0.1. 
 	The domain defaults to the platform MBeanServer (DefaultDomain).

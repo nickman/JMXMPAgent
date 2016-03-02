@@ -39,7 +39,10 @@ public enum SpecField {
 	/** The binding interface */
 	IFACE("-i", "127.0.0.1"),
 	/** The JMX domain */
-	DOMAIN("-d", "DefaultDomain");
+	DOMAIN("-d", "DefaultDomain"),
+	/** The Bulk JMX MBean registration (true/false) */
+	BULK("-b", "false");
+	
 	
 	/** The JMXMP spec delimiter */
 	public static final char SPEC_DELIM = ',';

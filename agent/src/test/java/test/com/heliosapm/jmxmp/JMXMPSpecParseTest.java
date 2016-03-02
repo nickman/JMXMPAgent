@@ -56,6 +56,7 @@ public class JMXMPSpecParseTest extends BaseTest {
 	public static final String JSON_EXPECTED = "expected";
 	public static final String JSON_PORT = "port";
 	public static final String JSON_IFACE = "iface";
+	public static final String JSON_BULK = "bulk";
 	public static final String JSON_DOMAIN = "domain";
 	
 //  {
@@ -123,8 +124,9 @@ public class JMXMPSpecParseTest extends BaseTest {
 		protected static Map<SpecField, String> parseJsonExpecteds(final JSONObject ex) throws Exception {
 			final Map<SpecField, String> map = new EnumMap<SpecField, String>(SpecField.class);
 			map.put(SpecField.PORT, "" + ex.getInt(JSON_PORT));
-			map.put(SpecField.IFACE, ex.getString(JSON_IFACE));
-			map.put(SpecField.DOMAIN, ex.getString(JSON_DOMAIN));
+			map.put(SpecField.IFACE, ex.optString(JSON_IFACE, SpecField.IFACE.defaultValue));
+			map.put(SpecField.DOMAIN, ex.optString(JSON_DOMAIN, SpecField.DOMAIN.defaultValue));
+			map.put(SpecField.BULK, ex.optString(JSON_BULK, "false"));
 			return map;
 		}
 
