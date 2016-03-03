@@ -22,27 +22,31 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.jboss.netty.handler.codec.serialization.ClassResolvers;
+import org.jboss.netty.handler.codec.serialization.CompactObjectOutputStream;
+import org.jboss.netty.handler.codec.serialization.CompactObjectInputStream;
+
 import com.heliosapm.jmxmp.spec.NVP;
 
 /**
- * <p>Title: BulkInvocation</p>
- * <p>Description: Represents a bulk invocation to be passed to a remote MBeanServer</p> 
+ * <p>Title: BulkInvocationBuilder</p>
+ * <p>Description: Builder for bulk invocations to be passed to remote MBeanServers for execution</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.jmxmp.bulk.BulkInvocation</code></p>
+ * <p><code>com.heliosapm.jmxmp.bulk.BulkInvocationBuilder</code></p>
  */
 
-public class BulkInvocation {
-	protected final ObjectOutputStream oos;
+public class BulkInvocationBuilder {
+	protected final CompactObjectOutputStream oos;
 	protected final GZIPOutputStream gos;
 	protected final ByteArrayOutputStream baos;
 	protected int opsWritten = 0;
@@ -55,18 +59,18 @@ public class BulkInvocation {
 	 * @param gzip true to enable gzip, false otherwise
 	 * @param estimatedSize The estimated size of the final content
 	 */
-	public BulkInvocation(final boolean gzip, final int estimatedSize) {
+	public BulkInvocationBuilder(final boolean gzip, final int estimatedSize) {
 		try {
 			baos = new ByteArrayOutputStream(estimatedSize);
 			gos = gzip ? new GZIPOutputStream(baos) : null;
-			oos = new ObjectOutputStream(gzip ? gos : baos);			
+			oos = new CompactObjectOutputStream(gzip ? gos : baos);			
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to initialize BulkInvocation", ex);
 		}
 	}
 	
 	public static void main(String[] args) {
-		BulkInvocation bi = new BulkInvocation(true, 1024)
+		BulkInvocationBuilder bi = new BulkInvocationBuilder(true, 1024)
 			.op(MBeanOp.QUERYNAMES, "Hello", "World")
 			.op(MBeanOp.CREATEMBEAN, "Hello", "Venus", 1, 6)
 			.op(MBeanOp.CREATEMBEAN, "Hello", null, "Venus", 1, 6);
@@ -75,13 +79,16 @@ public class BulkInvocation {
 			final int argCount = Math.abs(r.nextInt(20));
 			final Object[] arx = new Object[argCount];
 			for(int x = 0; x < argCount; x++) {
-				arx[x] = UUID.randomUUID().toString();
+				arx[x] = new String[]{UUID.randomUUID().toString()};
 			}
 			bi.op(MBeanOp.decode(Math.abs(r.nextInt(20))), arx);
 		}
-		byte[] payload = bi.done();
-		log("Payload:" + payload.length);
-		unmarshall(payload, bi.getOpCount());
+		BulkTransport bt = bi.build();
+		log("Payload:" + bt.payload.length);
+		List<NVP<MBeanOp, Object[]>> results = unmarshall(bt);
+		for(NVP<MBeanOp, Object[]> nvp: results) {
+			log("Op: [" + nvp.getKey() + "], Args: " + Arrays.toString(nvp.getValue()));
+		}
 		
 	}
 	
@@ -89,14 +96,27 @@ public class BulkInvocation {
 		System.out.println(msg);
 	}
 	
-	public int getOpCount() {
-		return opsWritten;
-	}
 	
-	public BulkInvocation op(final MBeanOp op, final Object...args) {
+	/**
+	 * Adds an op to the builder
+	 * @param op The op
+	 * @param args The arguments
+	 * @return this builder
+	 */
+	public BulkInvocationBuilder op(final MBeanOp op, final Object...args) {
 		try {			
 			oos.writeByte(op.byteOrdinal);
-			oos.writeObject(args);
+			final int argCount = args==null ? 0 : args.length;
+			oos.writeInt(argCount);
+			if(argCount > 0) {
+				for(int i = 0; i < argCount; i++) {
+					if(args[i]==null) oos.writeByte(0);
+					else {						
+						oos.writeByte(1);
+						oos.writeObject(args[0]);
+					}
+				}
+			}			
 			opsWritten++;
 		} catch (Exception ex) {
 			invalidate();
@@ -105,7 +125,12 @@ public class BulkInvocation {
 		return this;
 	}
 	
-	public final byte[] done() {
+	/**
+	 * Builds the bulk transport.
+	 * The builder will be invalidated and cannot be reused. // FIXME ?
+	 * @return the bulk transport.
+	 */
+	public final BulkTransport build() {
 		try {
 			oos.flush();
 			if(gos!=null) {
@@ -114,7 +139,7 @@ public class BulkInvocation {
 			}
 			baos.flush();
 			final byte[] payload = baos.toByteArray();
-			return payload;
+			return new BulkTransport(opsWritten, payload);
 		} catch (Exception ex) {			
 			throw new RuntimeException("Failed to complete payload", ex);			
 		} finally {
@@ -122,33 +147,40 @@ public class BulkInvocation {
 		}
 	}
 	
-	public static List<NVP<MBeanOp, Object[]>> unmarshall(final byte[] payload, final int ops) {
-		ObjectInputStream ois = null;
-		GZIPInputStream gis;
-		ByteArrayInputStream bais;		
+	public static List<NVP<MBeanOp, Object[]>> unmarshall(final BulkTransport b) {
+		CompactObjectInputStream ois = null;
+		GZIPInputStream gis = null;
+		ByteArrayInputStream bais = null;		
 		List<NVP<MBeanOp, Object[]>> nvps = null;
 		try {
-			bais = new ByteArrayInputStream(payload);
-			nvps = new ArrayList<NVP<MBeanOp, Object[]>>(ops);
+			bais = new ByteArrayInputStream(b.payload);
+			nvps = new ArrayList<NVP<MBeanOp, Object[]>>(b.opCount);
 			final byte[] opCountBytes = new byte[4];
-			System.arraycopy(payload, 0, opCountBytes, 0, 4);
+			System.arraycopy(b.payload, 0, opCountBytes, 0, 4);
 			if(isGzipped(opCountBytes)) {
 				gis = new GZIPInputStream(bais);
-				ois = new ObjectInputStream(gis);
+				ois = new CompactObjectInputStream(gis, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
 			} else {
 				gis = null;
-				ois = new ObjectInputStream(bais);
+				ois = new CompactObjectInputStream(bais, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
 			}
-			for(int i = 0; i < ops; i++) {
+			for(int i = 0; i < b.opCount; i++) {
 				MBeanOp mbeanOp = MBeanOp.decode(ois.readByte());
-				Object[] args = (Object[])ois.readObject();
+				final int argCount = ois.readInt();
+				final Object[] args = new Object[argCount];
+				for(int x = 0; x < argCount; x++) {
+					if(ois.readByte()==0) continue;
+					args[x] = ois.readObject();
+				}
 				nvps.add(new NVP<MBeanOp, Object[]>(mbeanOp, args));
 			}
 			return nvps;
 		} catch (Exception ex) {
 			throw new RuntimeException("Failed to unmarshall payload", ex);
 		} finally {
-			
+			if(ois!=null) try { ois.close(); } catch (Exception x) {/* No Op */}
+			if(gis!=null) try { gis.close(); } catch (Exception x) {/* No Op */}
+			if(bais!=null) try { bais.close(); } catch (Exception x) {/* No Op */}
 		}
 	}
 	

@@ -20,10 +20,7 @@ package com.heliosapm.jmxmp.bulk;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.Attribute;
@@ -35,13 +32,10 @@ import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanException;
-import javax.management.MBeanInfo;
 import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServerConnection;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
-import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
@@ -56,284 +50,260 @@ import org.json.JSONObject;
  * <p><code>com.heliosapm.jmxmp.bulk.BulkProxyFactory</code></p>
  */
 
-public class BulkProxyFactory implements MBeanServerConnection {
+public class BulkProxyFactory {
 	/** The queued commands */
 	protected final List<JSONObject> commands = new ArrayList<JSONObject>();
 	/** The command serial number factory */
 	protected final AtomicLong commandSerial = new AtomicLong();
+	
+	final BulkInvocationBuilder invBuilder;
+	
 	/**
 	 * Creates a new BulkProxyFactory
 	 */
-	public BulkProxyFactory() {
-		// TODO Auto-generated constructor stub
+	public BulkProxyFactory(final boolean gzip) {
+		invBuilder = new BulkInvocationBuilder(gzip, 8192);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#addNotificationListener(javax.management.ObjectName, javax.management.NotificationListener, javax.management.NotificationFilter, java.lang.Object)
 	 */
-	@Override
-	public void addNotificationListener(final ObjectName name, final NotificationListener listener, final NotificationFilter filter, final Object handback) throws InstanceNotFoundException, IOException {
-		throw new UnsupportedOperationException();
+	
+	public void addNotificationListener(final ObjectName name, final NotificationListener listener, final NotificationFilter filter, final Object handback, final MBSCOpCallback cb) throws InstanceNotFoundException, IOException {
+		invBuilder.op(MBeanOp.ADDNOTIFICATIONLISTENER, name, listener, filter, handback);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#addNotificationListener(javax.management.ObjectName, javax.management.ObjectName, javax.management.NotificationFilter, java.lang.Object)
 	 */
-	@Override
-	public void addNotificationListener(final ObjectName name, final ObjectName listener, final NotificationFilter filter, final Object handback) throws InstanceNotFoundException, IOException {
-		throw new UnsupportedOperationException();		
+	
+	public void addNotificationListener(final ObjectName name, final ObjectName listener, final NotificationFilter filter, final Object handback, final MBSCOpCallback cb) throws InstanceNotFoundException, IOException {
+		invBuilder.op(MBeanOp.ADDNOTIFICATIONLISTENER1, name, listener, filter, handback);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#createMBean(java.lang.String, javax.management.ObjectName)
 	 */
-	@Override
-	public ObjectInstance createMBean(final String className, final ObjectName name) throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException, MBeanException, NotCompliantMBeanException, IOException {
-		final Map<String, Object> f = new HashMap<String, Object>();
+	
+	public void createMBean(final String className, final ObjectName name, final MBSCOpCallback cb) throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException, MBeanException, NotCompliantMBeanException, IOException {
+		invBuilder.op(MBeanOp.CREATEMBEAN2, className, name);
 		
-		commands.add(new JSONObject(f));
-		return null;
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#createMBean(java.lang.String, javax.management.ObjectName, javax.management.ObjectName)
 	 */
-	@Override
-	public ObjectInstance createMBean(String className, ObjectName name, ObjectName loaderName)
-			throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException, MBeanException,
-			NotCompliantMBeanException, InstanceNotFoundException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void createMBean(final String className, final ObjectName name, final ObjectName loaderName, final MBSCOpCallback cb) throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException, MBeanException, NotCompliantMBeanException, InstanceNotFoundException, IOException {
+		invBuilder.op(MBeanOp.CREATEMBEAN3, className, name, loaderName);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#createMBean(java.lang.String, javax.management.ObjectName, java.lang.Object[], java.lang.String[])
 	 */
-	@Override
-	public ObjectInstance createMBean(String className, ObjectName name, Object[] params, String[] signature)
-			throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException, MBeanException,
-			NotCompliantMBeanException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void createMBean(final String className, final ObjectName name, final Object[] params, final String[] signature, final MBSCOpCallback cb) throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException, MBeanException, NotCompliantMBeanException, IOException {
+		invBuilder.op(MBeanOp.CREATEMBEAN1, className, name, params, signature);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#createMBean(java.lang.String, javax.management.ObjectName, javax.management.ObjectName, java.lang.Object[], java.lang.String[])
 	 */
-	@Override
-	public ObjectInstance createMBean(String className, ObjectName name, ObjectName loaderName, Object[] params,
-			String[] signature) throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException,
-					MBeanException, NotCompliantMBeanException, InstanceNotFoundException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void createMBean(final String className, final ObjectName name, final ObjectName loaderName, final Object[] params, final String[] signature, final MBSCOpCallback cb) throws ReflectionException, InstanceAlreadyExistsException, MBeanRegistrationException, MBeanException, NotCompliantMBeanException, InstanceNotFoundException, IOException {
+		invBuilder.op(MBeanOp.CREATEMBEAN, className, name, loaderName, params, signature);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#getAttribute(javax.management.ObjectName, java.lang.String)
 	 */
-	@Override
-	public Object getAttribute(ObjectName name, String attribute) throws MBeanException, AttributeNotFoundException,
-			InstanceNotFoundException, ReflectionException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void getAttribute(final ObjectName name, final String attribute, final MBSCOpCallback cb) throws MBeanException, AttributeNotFoundException, InstanceNotFoundException, ReflectionException, IOException {
+		invBuilder.op(MBeanOp.GETATTRIBUTE, name, attribute);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#getAttributes(javax.management.ObjectName, java.lang.String[])
 	 */
-	@Override
-	public AttributeList getAttributes(ObjectName name, String[] attributes)
-			throws InstanceNotFoundException, ReflectionException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void getAttributes(final ObjectName name, final String[] attributes, final MBSCOpCallback cb) throws InstanceNotFoundException, ReflectionException, IOException {
+		invBuilder.op(MBeanOp.GETATTRIBUTES, name, attributes);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#getDefaultDomain()
 	 */
-	@Override
-	public String getDefaultDomain() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void getDefaultDomain(final MBSCOpCallback cb) throws IOException {
+		invBuilder.op(MBeanOp.GETDEFAULTDOMAIN);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#getDomains()
 	 */
-	@Override
-	public String[] getDomains() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void getDomains(final MBSCOpCallback cb) throws IOException {
+		invBuilder.op(MBeanOp.GETDOMAINS);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#getMBeanCount()
 	 */
-	@Override
-	public Integer getMBeanCount() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void getMBeanCount(final MBSCOpCallback cb) throws IOException {
+		invBuilder.op(MBeanOp.GETMBEANCOUNT);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#getMBeanInfo(javax.management.ObjectName)
 	 */
-	@Override
-	public MBeanInfo getMBeanInfo(ObjectName name)
-			throws InstanceNotFoundException, IntrospectionException, ReflectionException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void getMBeanInfo(final ObjectName name, final MBSCOpCallback cb) throws InstanceNotFoundException, IntrospectionException, ReflectionException, IOException {
+		invBuilder.op(MBeanOp.GETMBEANINFO, name);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#getObjectInstance(javax.management.ObjectName)
 	 */
-	@Override
-	public ObjectInstance getObjectInstance(ObjectName name) throws InstanceNotFoundException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void getObjectInstance(final ObjectName name, final MBSCOpCallback cb) throws InstanceNotFoundException, IOException {
+		invBuilder.op(MBeanOp.GETOBJECTINSTANCE, name);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#invoke(javax.management.ObjectName, java.lang.String, java.lang.Object[], java.lang.String[])
 	 */
-	@Override
-	public Object invoke(ObjectName name, String operationName, Object[] params, String[] signature)
-			throws InstanceNotFoundException, MBeanException, ReflectionException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void invoke(final ObjectName name, final String operationName, final Object[] params, final String[] signature, final MBSCOpCallback cb) throws InstanceNotFoundException, MBeanException, ReflectionException, IOException {
+		invBuilder.op(MBeanOp.INVOKE, name, operationName, params, signature);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#isInstanceOf(javax.management.ObjectName, java.lang.String)
 	 */
-	@Override
-	public boolean isInstanceOf(ObjectName name, String className) throws InstanceNotFoundException, IOException {
-		// TODO Auto-generated method stub
-		return false;
+	
+	public void isInstanceOf(final ObjectName name, final String className, final MBSCOpCallback cb) throws InstanceNotFoundException, IOException {
+		invBuilder.op(MBeanOp.ISINSTANCEOF, name, className);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#isRegistered(javax.management.ObjectName)
 	 */
-	@Override
-	public boolean isRegistered(ObjectName name) throws IOException {
-		// TODO Auto-generated method stub
-		return false;
+	
+	public void isRegistered(final ObjectName name, final MBSCOpCallback cb) throws IOException {
+		invBuilder.op(MBeanOp.ISREGISTERED, name);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#queryMBeans(javax.management.ObjectName, javax.management.QueryExp)
 	 */
-	@Override
-	public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void queryMBeans(final ObjectName name, final QueryExp query, final MBSCOpCallback cb) throws IOException {
+		invBuilder.op(MBeanOp.QUERYMBEANS, name, query);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#queryNames(javax.management.ObjectName, javax.management.QueryExp)
 	 */
-	@Override
-	public Set<ObjectName> queryNames(ObjectName name, QueryExp query) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void queryNames(final ObjectName name, final QueryExp query, final MBSCOpCallback cb) throws IOException {
+		invBuilder.op(MBeanOp.QUERYNAMES, name, query);
+		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#removeNotificationListener(javax.management.ObjectName, javax.management.ObjectName)
 	 */
-	@Override
-	public void removeNotificationListener(ObjectName name, ObjectName listener)
-			throws InstanceNotFoundException, ListenerNotFoundException, IOException {
-		// TODO Auto-generated method stub
-		
+	
+	public void removeNotificationListener(final ObjectName name, final ObjectName listener, final MBSCOpCallback cb) throws InstanceNotFoundException, ListenerNotFoundException, IOException {
+		invBuilder.op(MBeanOp.REMOVENOTIFICATIONLISTENER3, name, listener);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#removeNotificationListener(javax.management.ObjectName, javax.management.NotificationListener)
 	 */
-	@Override
-	public void removeNotificationListener(ObjectName name, NotificationListener listener)
-			throws InstanceNotFoundException, ListenerNotFoundException, IOException {
-		// TODO Auto-generated method stub
+	
+	public void removeNotificationListener(final ObjectName name, final NotificationListener listener, final MBSCOpCallback cb) throws InstanceNotFoundException, ListenerNotFoundException, IOException {
+		invBuilder.op(MBeanOp.REMOVENOTIFICATIONLISTENER1, name, listener);
 		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#removeNotificationListener(javax.management.ObjectName, javax.management.ObjectName, javax.management.NotificationFilter, java.lang.Object)
 	 */
-	@Override
-	public void removeNotificationListener(ObjectName name, ObjectName listener, NotificationFilter filter,
-			Object handback) throws InstanceNotFoundException, ListenerNotFoundException, IOException {
-		// TODO Auto-generated method stub
-		
+	
+	public void removeNotificationListener(final ObjectName name, final ObjectName listener, final NotificationFilter filter, final Object handback, final MBSCOpCallback cb) throws InstanceNotFoundException, ListenerNotFoundException, IOException {
+		invBuilder.op(MBeanOp.REMOVENOTIFICATIONLISTENER2, name, listener, filter, handback);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#removeNotificationListener(javax.management.ObjectName, javax.management.NotificationListener, javax.management.NotificationFilter, java.lang.Object)
 	 */
-	@Override
-	public void removeNotificationListener(ObjectName name, NotificationListener listener, NotificationFilter filter,
-			Object handback) throws InstanceNotFoundException, ListenerNotFoundException, IOException {
-		// TODO Auto-generated method stub
+	
+	public void removeNotificationListener(final ObjectName name, final NotificationListener listener, final NotificationFilter filter,	final Object handback, final MBSCOpCallback cb) throws InstanceNotFoundException, ListenerNotFoundException, IOException {
+		invBuilder.op(MBeanOp.REMOVENOTIFICATIONLISTENER, name, listener, filter, handback);
 		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#setAttribute(javax.management.ObjectName, javax.management.Attribute)
 	 */
-	@Override
-	public void setAttribute(ObjectName name, Attribute attribute)
-			throws InstanceNotFoundException, AttributeNotFoundException, InvalidAttributeValueException,
-			MBeanException, ReflectionException, IOException {
-		// TODO Auto-generated method stub
-		
+	
+	public void setAttribute(final ObjectName name, final Attribute attribute, final MBSCOpCallback cb) throws InstanceNotFoundException, AttributeNotFoundException, InvalidAttributeValueException, MBeanException, ReflectionException, IOException {
+		invBuilder.op(MBeanOp.SETATTRIBUTE, name, attribute);		
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#setAttributes(javax.management.ObjectName, javax.management.AttributeList)
 	 */
-	@Override
-	public AttributeList setAttributes(ObjectName name, AttributeList attributes)
-			throws InstanceNotFoundException, ReflectionException, IOException {
-		// TODO Auto-generated method stub
-		return null;
+	
+	public void setAttributes(final ObjectName name, final AttributeList attributes, final MBSCOpCallback cb) throws InstanceNotFoundException, ReflectionException, IOException {
+		invBuilder.op(MBeanOp.SETATTRIBUTES, name, attributes);
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * 
 	 * @see javax.management.MBeanServerConnection#unregisterMBean(javax.management.ObjectName)
 	 */
-	@Override
-	public void unregisterMBean(ObjectName name)
-			throws InstanceNotFoundException, MBeanRegistrationException, IOException {
-		// TODO Auto-generated method stub
-		
+	
+	public void unregisterMBean(final ObjectName name, final MBSCOpCallback cb) throws InstanceNotFoundException, MBeanRegistrationException, IOException {
+		invBuilder.op(MBeanOp.UNREGISTERMBEAN, name);		
 	}
 	
 
