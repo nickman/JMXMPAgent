@@ -1,0 +1,1 @@
+javax.management.MBeanServerConnection.queryNames(Ljavax/management/ObjectName;Ljavax/management/QueryExp;)Ljava/util/Set;

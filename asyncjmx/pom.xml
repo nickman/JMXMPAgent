@@ -8,10 +8,10 @@
 	</parent>
 
 	<groupId>com.heliosapm.jmxmp</groupId>
-	<artifactId>helios-jmxmp-agent</artifactId>
+	<artifactId>helios-jmxmp-asyncjmx</artifactId>
 	<packaging>jar</packaging>
 	<version>1.0-SNAPSHOT</version>
-	<name>Helios JMXMP :: Agent</name>
+	<name>Helios JMXMP :: Asynchronous JMX</name>
 
 	<dependencies>
 
@@ -21,11 +21,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-		  <groupId>org.glassfish.main.external</groupId>
-		  <artifactId>jmxremote_optional-repackaged</artifactId>
-		  <version>4.1</version>
-		</dependency>
 		
 		<dependency>
 		  <groupId>org.json</groupId>
@@ -33,11 +28,6 @@
 		  <version>20140107</version>
 		</dependency>
 			
-		<dependency>
-		  <groupId>org.ow2.asm</groupId>
-		  <artifactId>asm-all</artifactId>
-		  <version>4.0</version>
-		</dependency>
 		
 	    <dependency>
 			  <groupId>com.heliosapm.utils</groupId>

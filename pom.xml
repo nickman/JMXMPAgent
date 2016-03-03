@@ -8,6 +8,7 @@
 	<name>Helios JMXMP :: All</name>
 	<modules>
 		<module>agent</module>		
+		<module>asyncjmx</module>		
 	</modules>
 	<properties>
   	<!-- Misc -->
