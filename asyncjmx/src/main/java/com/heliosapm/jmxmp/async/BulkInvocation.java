@@ -18,11 +18,20 @@ under the License.
  */
 package com.heliosapm.jmxmp.async;
 
+import java.io.ByteArrayInputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+
+import org.jboss.netty.handler.codec.serialization.ClassResolvers;
+import org.jboss.netty.handler.codec.serialization.CompactObjectInputStream;
+
+import com.heliosapm.utils.tuples.NVP;
 
 
 
@@ -34,7 +43,7 @@ import java.io.Serializable;
  * <p><code>com.heliosapm.jmxmp.async.BulkInvocation</code></p>
  */
 
-public class BulkInvocation implements Serializable, Externalizable {
+public class BulkInvocation implements Externalizable {
  
 	/** The number of serialized ops */
 	protected int opCount;
@@ -63,7 +72,47 @@ public class BulkInvocation implements Serializable, Externalizable {
 		
 	}
 	
+	/**
+	 * Returns a list of the unmarshalled invocations
+	 * @return a list of the unmarshalled invocations
+	 */
+	public List<NVP<MBeanOp, Object[]>> getInvocations() {
+		CompactObjectInputStream ois = null;
+		GZIPInputStream gis = null;
+		ByteArrayInputStream bais = null;		
+		List<NVP<MBeanOp, Object[]>> nvps = null;
+		try {
+			bais = new ByteArrayInputStream(payload);
+			nvps = new ArrayList<NVP<MBeanOp, Object[]>>(opCount);
+			if(gzipped) {
+				gis = new GZIPInputStream(bais);
+				ois = new CompactObjectInputStream(gis, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
+			} else {
+				gis = null;
+				ois = new CompactObjectInputStream(bais, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
+			}
+			for(int i = 0; i < opCount; i++) {
+				MBeanOp mbeanOp = MBeanOp.decode(ois.readByte());
+				final int argCount = ois.readInt();
+				final Object[] args = new Object[argCount];
+				for(int x = 0; x < argCount; x++) {
+					if(ois.readByte()==0) continue;
+					args[x] = ois.readObject();
+				}
+				nvps.add(new NVP<MBeanOp, Object[]>(mbeanOp, args));
+			}
+			return nvps;
+		} catch (Exception ex) {
+			throw new RuntimeException("Failed to unmarshall payload", ex);
+		} finally {
+			if(ois!=null) try { ois.close(); } catch (Exception x) {/* No Op */}
+			if(gis!=null) try { gis.close(); } catch (Exception x) {/* No Op */}
+			if(bais!=null) try { bais.close(); } catch (Exception x) {/* No Op */}
+		}
+		
+	}
 
+	
 	/**
 	 * {@inheritDoc}
 	 * @see java.io.Externalizable#readExternal(java.io.ObjectInput)

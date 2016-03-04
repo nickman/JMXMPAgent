@@ -20,8 +20,12 @@ package com.heliosapm.jmxmp.async;
 
 import java.io.ObjectStreamException;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
+
+import com.heliosapm.jmxmp.async.server.JMXBulkServiceMBean;
 
 /**
  * <p>Title: HomeBulkInvocation</p>
@@ -34,6 +38,7 @@ import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 public class HomeBulkInvocation extends BulkInvocation {
 	/** The registered handlers, one for each op */
 	protected transient NonBlockingHashMapLong<AsyncJMXResponseHandler> handlers = null;
+	protected final JMXBulkServiceMBean bulkService;
 	
 	/**
 	 * Creates a new HomeBulkInvocation
@@ -41,8 +46,9 @@ public class HomeBulkInvocation extends BulkInvocation {
 	 * @param payload The serialized ops
 	 * @param gzipped Indicates if the op payload is gzipped
 	 */
-	HomeBulkInvocation(final int opCount, final byte[] payload, final boolean gzipped) {
+	HomeBulkInvocation(final int opCount, final byte[] payload, final boolean gzipped, final JMXBulkServiceMBean bulkService) {
 		super(opCount, payload, gzipped);
+		this.bulkService = bulkService;
 	}
 	
 	/**
@@ -58,6 +64,15 @@ public class HomeBulkInvocation extends BulkInvocation {
 	HomeBulkInvocation setHandlers(final NonBlockingHashMapLong<AsyncJMXResponseHandler> handlers) {
 		this.handlers = handlers;
 		return this;
+	}
+	
+	public void send() {
+		final BulkResponse br = bulkService.invoke(this);
+		for(final Response r: br.responses()) {
+			final MBeanOp op = r.op;
+			op.handleResponse(r.value, handlers.remove(r.reqId));
+			
+		}
 	}
 	
 	

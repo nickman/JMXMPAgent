@@ -22,9 +22,15 @@
  */
 package com.heliosapm.jmxmp.async;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>Title: BulkResponse</p>
@@ -34,15 +40,50 @@ import java.util.List;
  * <p><code>com.heliosapm.jmxmp.bulk.BulkResponse</code></p>
  */
 
-public class BulkResponse {
-	final List<Object> responses = new ArrayList<Object>();
-	Iterator<Object> iter = null;
+public class BulkResponse implements Externalizable {
+	/** The responses to include into this bulk response */
+	protected final List<Response> responses = new ArrayList<Response>();
+	
+
 	
 	/**
 	 * Creates a new BulkResponse
 	 */
 	public BulkResponse() {
-		// TODO Auto-generated constructor stub
+		
+	}
+	
+	public void resp(final MBeanOp op, final int reqId, final Object value) {
+		responses.add(new Response(op, reqId, value));
+	}
+	
+	public String toString() {
+		return "BulkResponse: " + responses.size();
+	}
+	
+	public int getResponseCount() {
+		return responses.size();
+	}
+	
+	public List<Response> responses() {
+		return responses;
+	}
+
+	@Override
+	public void readExternal(final ObjectInput in) throws IOException, ClassNotFoundException {
+		final int size = in.readInt();
+		byte[] payload = new byte[size];
+		in.read(payload);
+		Collections.addAll(responses, Util.deser(payload, Response.class));
+	}
+
+	@Override
+	public void writeExternal(final ObjectOutput out) throws IOException {
+		byte[] payload = Util.ser(true, 8192, responses);
+		responses.clear();
+		out.write(payload.length);
+		out.write(payload);
+		payload = null;
 	}
 	
 	

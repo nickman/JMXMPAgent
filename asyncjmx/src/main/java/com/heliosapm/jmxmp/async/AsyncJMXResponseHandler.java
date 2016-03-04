@@ -26,11 +26,14 @@ import javax.management.MBeanServerConnection;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
-import com.heliosapm.utils.unsafe.UnsafeAdapter;
-
+import co.paralleluniverse.fibers.DefaultFiberScheduler;
 import co.paralleluniverse.fibers.FiberAsync;
+import co.paralleluniverse.fibers.FiberScheduler;
 import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.fibers.Suspendable;
+import co.paralleluniverse.strands.SuspendableCallable;
+
+import com.heliosapm.utils.unsafe.UnsafeAdapter;
 
 /**
  * <p>Title: AsyncJMXResponseHandler</p>
@@ -78,8 +81,36 @@ public interface AsyncJMXResponseHandler {
 	 * <p><code>com.heliosapm.jmxmp.async.MBeanServerConnectionAsync</code></p>
 	 */
 	static abstract class MBeanServerConnectionAsync extends FiberAsync<Object, Throwable> implements AsyncJMXResponseHandler {
-		
+		final FiberScheduler fiberPool = DefaultFiberScheduler.getInstance();
 
+		public class AsyncDelegator<T> implements SuspendableCallable<T> {
+			/**  */
+			private static final long serialVersionUID = -2544535076161791197L;
+			final MBeanServerConnectionAsync async;
+			final Class<T> type;
+
+			/**
+			 * Creates a new AsyncDelegator
+			 * @param async
+			 */
+			private AsyncDelegator(MBeanServerConnectionAsync async, final Class<T> type) {
+				super();
+				this.async = async;
+				this.type = type;
+			}
+			
+			@Override
+			public T run() throws SuspendExecution, InterruptedException {
+				try {
+					return (T) async.run();
+				} catch (Throwable t) {
+					UnsafeAdapter.throwException(t);
+					throw new RuntimeException();
+				}
+			}
+			
+		}
+ 		
 		/**  */
 		private static final long serialVersionUID = 3907028016808383752L;
 		
@@ -87,12 +118,13 @@ public interface AsyncJMXResponseHandler {
 		@Suspendable
 		public <T> T get(final Class<?> type) {
 			try {
-				return (T)run();			
+				return (T)run();  //(T) fiberPool.newFiber(new AsyncDelegator(this, type)).start().get();
+				
 			} catch (Throwable e) {			
 				System.out.println("Async Ex:" + e);
 				e.printStackTrace();
 				if(e.getClass()!=SuspendExecution.class) {
-					UnsafeAdapter.throwException(e);
+//					UnsafeAdapter.throwException(e);
 					throw new RuntimeException(); // won't get called
 				} else {
 					return null; // won't get called 
@@ -111,6 +143,22 @@ public interface AsyncJMXResponseHandler {
 				}
 			}			
 		}
+		
+		@Suspendable
+		public <T> T noop() {
+			try {
+				run();	
+				return (T)null;
+			} catch (Throwable e) {				
+				if(e.getClass()!=SuspendExecution.class) {
+					UnsafeAdapter.throwException(e);
+					throw new RuntimeException(); // won't get called
+				} else {
+					throw new RuntimeException(); 
+				}
+			}			
+		}
+		
 
 		/**
 		 * {@inheritDoc}

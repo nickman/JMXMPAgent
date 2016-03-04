@@ -24,6 +24,11 @@ package com.heliosapm.jmxmp.async;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -45,9 +50,16 @@ import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
 
-import com.heliosapm.jmxmp.async.AsyncJMXResponseHandler.MBeanServerConnectionAsync;
+import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 
+import co.paralleluniverse.fibers.Fiber;
+import co.paralleluniverse.fibers.FiberExecutorScheduler;
+import co.paralleluniverse.fibers.FiberScheduler;
+import co.paralleluniverse.fibers.SuspendExecution;
 import co.paralleluniverse.fibers.Suspendable;
+import co.paralleluniverse.strands.SuspendableCallable;
+
+import com.heliosapm.jmxmp.async.AsyncJMXResponseHandler.MBeanServerConnectionAsync;
 
 /**
  * <p>Title: SuspendableMBeanServerConnection</p>
@@ -59,6 +71,15 @@ import co.paralleluniverse.fibers.Suspendable;
 @SuppressWarnings("serial")
 public class SuspendableMBeanServerConnection implements MBeanServerConnection {
 	final BulkMBeanServerConnection bmc;
+	final BulkInvocationBuilder invBuilder;
+	final FiberScheduler scheduler = new FiberExecutorScheduler("asyncjmx", Executors.newFixedThreadPool(1, new ThreadFactory(){
+		@Override
+		public Thread newThread(final Runnable r) {
+			final Thread t = new Thread(r, "JMXFiberExecutor");
+			t.setDaemon(true);
+			return t;
+		}
+	})); 
 	
 	
 	/**
@@ -66,6 +87,7 @@ public class SuspendableMBeanServerConnection implements MBeanServerConnection {
 	 * @param invBuilder The invocation builder
 	 */
 	public SuspendableMBeanServerConnection(final BulkInvocationBuilder invBuilder) {
+		this.invBuilder = invBuilder;
 		bmc = new BulkMBeanServerConnection(invBuilder);		
 	}
 
@@ -338,7 +360,31 @@ public class SuspendableMBeanServerConnection implements MBeanServerConnection {
 			}			
 		}.get(Set.class);
 	}
-
+	
+	private final AtomicLong fiberTask = new AtomicLong();
+	private final ConcurrentSkipListMap<Long, Fiber<?>> fibers = new ConcurrentSkipListMap<Long, Fiber<?>>(); 
+	
+	public void reset() {
+		for(Fiber<?> f: fibers.values()) {
+			try { f.get(); } catch (Exception ex) { 
+					//ex.printStackTrace(System.err);
+				//throw new RuntimeException(ex); 
+				}
+		}
+		fiberTask.set(0);
+		log("Reset Complete");
+		invBuilder.build().send();
+	}
+	
+	public static void log(final Object fmt, final Object...args) {
+		final Fiber f = Fiber.currentFiber();
+		if(f!=null) {
+			System.out.println("f:[" + f.getName() + "]" + String.format(fmt.toString(), args));
+		} else {
+			System.out.println("t:[" + Thread.currentThread().getName() + "]" + String.format(fmt.toString(), args));
+		}
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * @see javax.management.MBeanServerConnection#queryNames(javax.management.ObjectName, javax.management.QueryExp)
@@ -346,15 +392,33 @@ public class SuspendableMBeanServerConnection implements MBeanServerConnection {
 	
 	@Override @Suspendable
 	public Set<ObjectName> queryNames(final ObjectName name, final QueryExp query) throws IOException {
+		if(Fiber.isCurrentFiber()) {
+			log("Calling In Fiber: queryNames");
+			fibers.put(fiberTask.incrementAndGet(), 
+				new Fiber<Void>(scheduler, new SuspendableCallable<Void>() {
+					@Override
+					public Void run() throws SuspendExecution, InterruptedException {          
+						return new MBeanServerConnectionAsync() {
+							@Override
+							protected void requestAsync() {
+								log("------------------> Requesting Async...");
+								bmc.queryNames(name, query, this);
 		
-		return new MBeanServerConnectionAsync() {
-			@Override
-			protected void requestAsync() {
-				System.out.println("------------------> Requesting Async...");
-				bmc.queryNames(name, query, this);
-				
-			}			
-		}.get(Set.class);
+							}			
+						}.noop(); 
+					}
+				}).start()
+			);
+			return null;
+		} else {
+			try {
+				log("Calling In Thread: queryNames");
+				return (Set<ObjectName>) fibers.remove(fiberTask.incrementAndGet()).get();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				throw new RuntimeException(ex);
+			}
+		}
 	}
 
 	/**
