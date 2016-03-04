@@ -22,8 +22,9 @@ import java.io.ByteArrayInputStream;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
-import java.io.Serializable;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -77,7 +78,8 @@ public class BulkInvocation implements Externalizable {
 	 * @return a list of the unmarshalled invocations
 	 */
 	public List<NVP<MBeanOp, Object[]>> getInvocations() {
-		CompactObjectInputStream ois = null;
+//		CompactObjectInputStream ois = null;
+		ObjectInputStream ois = null;
 		GZIPInputStream gis = null;
 		ByteArrayInputStream bais = null;		
 		List<NVP<MBeanOp, Object[]>> nvps = null;
@@ -86,10 +88,12 @@ public class BulkInvocation implements Externalizable {
 			nvps = new ArrayList<NVP<MBeanOp, Object[]>>(opCount);
 			if(gzipped) {
 				gis = new GZIPInputStream(bais);
-				ois = new CompactObjectInputStream(gis, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
+				ois = new ObjectInputStream(gis);
+						//new CompactObjectInputStream(gis, ClassResolvers.softCachingConcurrentResolver(Thread.currentThread().getContextClassLoader()));
 			} else {
 				gis = null;
-				ois = new CompactObjectInputStream(bais, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
+				ois = new ObjectInputStream(bais);
+					//new CompactObjectInputStream(bais, ClassResolvers.softCachingConcurrentResolver(Thread.currentThread().getContextClassLoader()));
 			}
 			for(int i = 0; i < opCount; i++) {
 				MBeanOp mbeanOp = MBeanOp.decode(ois.readByte());

@@ -18,14 +18,19 @@ under the License.
  */
 package com.heliosapm.jmxmp.async.server;
 
+import java.util.List;
+
 import javax.management.MBeanRegistration;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.heliosapm.jmxmp.async.BulkInvocation;
 import com.heliosapm.jmxmp.async.BulkResponse;
+import com.heliosapm.jmxmp.async.BulkResponseBuilder;
 import com.heliosapm.jmxmp.async.MBeanOp;
 import com.heliosapm.utils.tuples.NVP;
+
+import co.paralleluniverse.fibers.Fiber;
 
 /**
  * <p>Title: JMXBulkService</p>
@@ -44,10 +49,23 @@ public class JMXBulkService implements JMXBulkServiceMBean, MBeanRegistration {
 
 	}
 	
+	public static void log(final Object fmt, final Object...args) {
+		final Fiber f = Fiber.currentFiber();
+		if(f!=null) {
+			System.out.println("f:JMXBulkService[" + f.getName() + "]" + String.format(fmt.toString(), args));
+		} else {
+			System.out.println("t:JMXBulkService[" + Thread.currentThread().getName() + "]" + String.format(fmt.toString(), args));
+		}
+	}
+	
+	
 	public BulkResponse invoke(final BulkInvocation invocation) {
 		if(server == null) throw new IllegalStateException("The JMXService is not registered and has a null MBeanServer reference");
-		final BulkResponse response = new BulkResponse();
+		log("Invoking BulkInvocation....");
+		final BulkResponseBuilder responseBuilder = new BulkResponseBuilder(true, 8192);
 		int key = 0;
+		final List<NVP<MBeanOp, Object[]>> ops = invocation.getInvocations();
+		log("Processing %s MBeanOps", ops.size());
 		for(final NVP<MBeanOp, Object[]> inv : invocation.getInvocations()) {
 			Object returnValue = null;
 			try {
@@ -55,10 +73,12 @@ public class JMXBulkService implements JMXBulkServiceMBean, MBeanRegistration {
 			} catch (Throwable t) {
 				returnValue = t;
 			}
-			response.resp(inv.getKey(), key, returnValue);
+			responseBuilder.op(inv.getKey(), key, returnValue);			
+			log("Writing response [op:%s, result:%s", inv.getKey(), returnValue);
 			key++;
 		}
-		return response;
+		log("Processed %s MBeanOps", ops.size());
+		return responseBuilder.build();
 	}
 
 	@Override

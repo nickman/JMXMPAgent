@@ -91,7 +91,7 @@ public class Test {
 			final MBeanServerConnection conn = JMXConnectorFactory.connect(new JMXServiceURL("service:jmx:jmxmp://localhost:7774")).getMBeanServerConnection();
 			final JMXBulkServiceMBean bulkService = MBeanServerInvocationHandler.newProxyInstance(conn, BULK, JMXBulkServiceMBean.class, false);
 			JMXHelper.registerMBean(BULK, new JMXBulkService());
-			final BulkInvocationBuilder bib = new BulkInvocationBuilder(false, 8192, conn);
+			final BulkInvocationBuilder bib = new BulkInvocationBuilder(true, 8192, conn);
 			final MBeanServerConnection msc = new SuspendableMBeanServerConnection(bib);
 //			new SR(msc).start();//.join();
 			//msc.queryNames(new ObjectName("*:*"), null);
@@ -121,7 +121,7 @@ public class Test {
 						try { 
 							fiberGoAhead(msc); 
 							latch.countDown();
-						} catch (Exception ex) { throw new RuntimeException(ex); }
+						} catch (Exception ex) { ex.printStackTrace(System.out); }
 						return null;
 					}
 				});
@@ -215,7 +215,12 @@ public class Test {
 	}
 
 	public static void log(final Object fmt, final Object...args) {
-		System.out.println("[" + Thread.currentThread().getName() + "]" + String.format(fmt.toString(), args));
+		final Fiber f = Fiber.currentFiber();
+		if(f!=null) {
+			System.out.println("f:[" + f.getName() + "]" + String.format(fmt.toString(), args));
+		} else {
+			System.out.println("t:[" + Thread.currentThread().getName() + "]" + String.format(fmt.toString(), args));
+		}
 	}
 	
 	

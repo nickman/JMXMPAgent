@@ -19,6 +19,7 @@ under the License.
 package com.heliosapm.jmxmp.async.util;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
 
 import javax.management.MBeanServerConnection;
 
@@ -39,13 +40,19 @@ public class GenJMXSuspendables {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		final Class<?> clazz = MBeanServerConnection.class; 
-		try {
-			for(Method m: clazz.getDeclaredMethods()) {
-				log(clazz.getName() + "." + m.getName() + StringHelper.getMethodDescriptor(m));
+		final Class<?>[] GENCLASSES = {
+				MBeanServerConnection.class,
+				CountDownLatch.class
+		};
+		
+		for(Class<?> clazz: GENCLASSES) {
+			try {
+				for(Method m: clazz.getDeclaredMethods()) {
+					log(clazz.getName() + "." + m.getName() + StringHelper.getMethodDescriptor(m));
+				}
+			} catch (Exception ex) {
+				ex.printStackTrace(System.err);
 			}
-		} catch (Exception ex) {
-			ex.printStackTrace(System.err);
 		}
 
 	}

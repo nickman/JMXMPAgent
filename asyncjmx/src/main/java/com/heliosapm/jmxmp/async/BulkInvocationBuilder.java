@@ -18,16 +18,8 @@ under the License.
  */
 package com.heliosapm.jmxmp.async;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.zip.GZIPInputStream;
+import java.io.ObjectOutputStream;
 import java.util.zip.GZIPOutputStream;
 
 import javax.management.MBeanServerConnection;
@@ -35,15 +27,12 @@ import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
-import org.jboss.netty.handler.codec.serialization.ClassResolvers;
-import org.jboss.netty.handler.codec.serialization.CompactObjectInputStream;
-import org.jboss.netty.handler.codec.serialization.CompactObjectOutputStream;
-
-import co.paralleluniverse.fibers.Fiber;
 
 import com.heliosapm.jmxmp.async.server.JMXBulkServiceMBean;
 import com.heliosapm.utils.jmx.JMXHelper;
-import com.heliosapm.utils.tuples.NVP;
+
+import co.paralleluniverse.fibers.Fiber;
+import co.paralleluniverse.fibers.Suspendable;
 
 /**
  * <p>Title: BulkInvocationBuilder</p>
@@ -54,7 +43,8 @@ import com.heliosapm.utils.tuples.NVP;
  */
 
 public class BulkInvocationBuilder {
-	protected final CompactObjectOutputStream oos;
+	//protected final CompactObjectOutputStream oos;
+	protected final ObjectOutputStream oos;
 	protected final GZIPOutputStream gos;
 	protected final ByteArrayOutputStream baos;
 	protected int opsWritten = 0;
@@ -74,7 +64,8 @@ public class BulkInvocationBuilder {
 		try {
 			baos = new ByteArrayOutputStream(estimatedSize);
 			gos = gzip ? new GZIPOutputStream(baos) : null;
-			oos = new CompactObjectOutputStream(gzip ? gos : baos);			
+			oos = new ObjectOutputStream(gzip ? gos : baos);
+					//new CompactObjectOutputStream(gzip ? gos : baos);			
 			this.conn = conn;
 			bulkService = MBeanServerInvocationHandler.newProxyInstance(conn, BULK, JMXBulkServiceMBean.class, false);
 		} catch (Exception ex) {
@@ -87,7 +78,7 @@ public class BulkInvocationBuilder {
 	public static void log(final Object fmt, final Object...args) {
 		final Fiber f = Fiber.currentFiber();
 		if(f!=null) {
-			System.out.println("f:[" + f.getName() + ":" + f.getId() + "]" + String.format(fmt.toString(), args));
+			System.out.println("f:[" + f.getName() + "]" + String.format(fmt.toString(), args));
 		} else {
 			System.out.println("t:[" + Thread.currentThread().getName() + "]" + String.format(fmt.toString(), args));
 		}
@@ -101,25 +92,36 @@ public class BulkInvocationBuilder {
 	 * @param args The arguments
 	 * @return this builder
 	 */
-	public BulkInvocationBuilder op(final MBeanOp op, final AsyncJMXResponseHandler handler, final Object...args) {
+	@Suspendable
+	public synchronized BulkInvocationBuilder op(final MBeanOp op, final AsyncJMXResponseHandler handler, final Object...args) {
 		try {			
-			log("Stored op [" + op + "]");
+			log("Storing op [" + op + "]");
 			oos.writeByte(op.byteOrdinal);
 			final int argCount = args==null ? 0 : args.length;
 			oos.writeInt(argCount);
 			if(argCount > 0) {
 				for(int i = 0; i < argCount; i++) {
-					if(args[i]==null) oos.writeByte(0);
-					else {						
+					if(args[i]==null) {
+						oos.writeByte(0);
+					} else {						
 						oos.writeByte(1);
-						oos.writeObject(args[0]);
+						oos.writeObject(args[i]);
 					}
 				}
 			}		
+//			MBeanOp mbeanOp = MBeanOp.decode(ois.readByte());
+//			final int argCount = ois.readInt();
+//			final Object[] args = new Object[argCount];
+//			for(int x = 0; x < argCount; x++) {
+//				if(ois.readByte()==0) continue;
+//				args[x] = ois.readObject();
+//			}
+			
 			if(handler!=null) {
 				handlers.put(opsWritten, handler);							
 			}
 			opsWritten++;
+			log("Stored op [" + op + "]");
 		} catch (Exception ex) {
 			invalidate();
 			throw new RuntimeException("Failed to store op [" + op + "]", ex);

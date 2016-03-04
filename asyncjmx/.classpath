@@ -6,79 +6,83 @@
   <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
   <classpathentry kind="var" path="M2_REPO/junit/junit/4.8.2/junit-4.8.2.jar" sourcepath="M2_REPO/junit/junit/4.8.2/junit-4.8.2-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/junit/junit/4.8.2/junit-4.8.2-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/junit/junit/4.8.2/junit-4.8.2-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/org/json/json/20140107/json-20140107.jar" sourcepath="M2_REPO/org/json/json/20140107/json-20140107-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/org/json/json/20140107/json-20140107-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/org/json/json/20140107/json-20140107-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="src" path="/heliosutils"/>
   <classpathentry kind="var" path="M2_REPO/co/paralleluniverse/quasar-core/0.7.4/quasar-core-0.7.4.jar" sourcepath="M2_REPO/co/paralleluniverse/quasar-core/0.7.4/quasar-core-0.7.4-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/co/paralleluniverse/quasar-core/0.7.4/quasar-core-0.7.4-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/co/paralleluniverse/quasar-core/0.7.4/quasar-core-0.7.4-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/io/dropwizard/metrics/metrics-core/3.1.2/metrics-core-3.1.2.jar" sourcepath="M2_REPO/io/dropwizard/metrics/metrics-core/3.1.2/metrics-core-3.1.2-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/io/dropwizard/metrics/metrics-core/3.1.2/metrics-core-3.1.2-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/io/dropwizard/metrics/metrics-core/3.1.2/metrics-core-3.1.2-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7.jar" sourcepath="M2_REPO/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/org/hdrhistogram/HdrHistogram/2.1.8/HdrHistogram-2.1.8.jar" sourcepath="M2_REPO/org/hdrhistogram/HdrHistogram/2.1.8/HdrHistogram-2.1.8-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/org/hdrhistogram/HdrHistogram/2.1.8/HdrHistogram-2.1.8-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/org/hdrhistogram/HdrHistogram/2.1.8/HdrHistogram-2.1.8-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/org/latencyutils/LatencyUtils/2.0.2/LatencyUtils-2.0.2.jar" sourcepath="M2_REPO/org/latencyutils/LatencyUtils/2.0.2/LatencyUtils-2.0.2-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/org/latencyutils/LatencyUtils/2.0.2/LatencyUtils-2.0.2-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/org/latencyutils/LatencyUtils/2.0.2/LatencyUtils-2.0.2-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/com/esotericsoftware/kryo/3.0.3/kryo-3.0.3.jar" sourcepath="M2_REPO/com/esotericsoftware/kryo/3.0.3/kryo-3.0.3-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/com/esotericsoftware/kryo/3.0.3/kryo-3.0.3-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/com/esotericsoftware/kryo/3.0.3/kryo-3.0.3-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/com/esotericsoftware/reflectasm/1.10.1/reflectasm-1.10.1.jar" sourcepath="M2_REPO/com/esotericsoftware/reflectasm/1.10.1/reflectasm-1.10.1-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/com/esotericsoftware/reflectasm/1.10.1/reflectasm-1.10.1-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/com/esotericsoftware/reflectasm/1.10.1/reflectasm-1.10.1-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/org/ow2/asm/asm/5.0.3/asm-5.0.3.jar" sourcepath="M2_REPO/org/ow2/asm/asm/5.0.3/asm-5.0.3-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/org/ow2/asm/asm/5.0.3/asm-5.0.3-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/org/ow2/asm/asm/5.0.3/asm-5.0.3-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/com/esotericsoftware/minlog/1.3.0/minlog-1.3.0.jar" sourcepath="M2_REPO/com/esotericsoftware/minlog/1.3.0/minlog-1.3.0-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/com/esotericsoftware/minlog/1.3.0/minlog-1.3.0-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/com/esotericsoftware/minlog/1.3.0/minlog-1.3.0-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/org/objenesis/objenesis/2.1/objenesis-2.1.jar" sourcepath="M2_REPO/org/objenesis/objenesis/2.1/objenesis-2.1-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/org/objenesis/objenesis/2.1/objenesis-2.1-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/org/objenesis/objenesis/2.1/objenesis-2.1-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/de/javakaffee/kryo-serializers/0.37/kryo-serializers-0.37.jar" sourcepath="M2_REPO/de/javakaffee/kryo-serializers/0.37/kryo-serializers-0.37-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/de/javakaffee/kryo-serializers/0.37/kryo-serializers-0.37-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/de/javakaffee/kryo-serializers/0.37/kryo-serializers-0.37-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/com/google/protobuf/protobuf-java/2.6.1/protobuf-java-2.6.1.jar" sourcepath="M2_REPO/com/google/protobuf/protobuf-java/2.6.1/protobuf-java-2.6.1-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/com/google/protobuf/protobuf-java/2.6.1/protobuf-java-2.6.1-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/com/google/protobuf/protobuf-java/2.6.1/protobuf-java-2.6.1-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
   <classpathentry kind="var" path="M2_REPO/com/google/guava/guava/19.0/guava-19.0.jar" sourcepath="M2_REPO/com/google/guava/guava/19.0/guava-19.0-sources.jar">
     <attributes>
-      <attribute value="jar:file:/home/nwhitehead/.m2/repository/com/google/guava/guava/19.0/guava-19.0-javadoc.jar!/" name="javadoc_location"/>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/com/google/guava/guava/19.0/guava-19.0-javadoc.jar!/" name="javadoc_location"/>
     </attributes>
   </classpathentry>
-  <classpathentry kind="var" path="M2_REPO/org/javassist/javassist/3.20.0-GA/javassist-3.20.0-GA.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/javassist/javassist/3.20.0-GA/javassist-3.20.0-GA.jar" sourcepath="M2_REPO/org/javassist/javassist/3.20.0-GA/javassist-3.20.0-GA-sources.jar">
+    <attributes>
+      <attribute value="jar:file:/media/nwhitehead/store/.m2/repository/org/javassist/javassist/3.20.0-GA/javassist-3.20.0-GA-javadoc.jar!/" name="javadoc_location"/>
+    </attributes>
+  </classpathentry>
 </classpath>

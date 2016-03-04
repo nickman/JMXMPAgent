@@ -23,3 +23,9 @@ javax.management.MBeanServerConnection.isInstanceOf(Ljavax/management/ObjectName
 javax.management.MBeanServerConnection.invoke(Ljavax/management/ObjectName;Ljava/lang/String;[Ljava/lang/Object;[Ljava/lang/String;)Ljava/lang/Object;
 javax.management.MBeanServerConnection.isRegistered(Ljavax/management/ObjectName;)Z
 javax.management.MBeanServerConnection.getAttributes(Ljavax/management/ObjectName;[Ljava/lang/String;)Ljavax/management/AttributeList;
+java.util.concurrent.CountDownLatch.toString()Ljava/lang/String;
+java.util.concurrent.CountDownLatch.await(JLjava/util/concurrent/TimeUnit;)Z
+java.util.concurrent.CountDownLatch.await()V
+java.util.concurrent.CountDownLatch.countDown()V
+java.util.concurrent.CountDownLatch.getCount()J
+

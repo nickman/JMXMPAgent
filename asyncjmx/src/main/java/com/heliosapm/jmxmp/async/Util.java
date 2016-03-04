@@ -21,14 +21,14 @@ package com.heliosapm.jmxmp.async;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.jboss.netty.handler.codec.serialization.ClassResolvers;
-import org.jboss.netty.handler.codec.serialization.CompactObjectInputStream;
 import org.jboss.netty.handler.codec.serialization.CompactObjectOutputStream;
 
 /**
@@ -53,17 +53,20 @@ public class Util {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T[] deser(final byte[] payload, final Class<T> type) {		
-		CompactObjectInputStream ois = null;
+//		CompactObjectInputStream ois = null;
+		ObjectInputStream ois = null;
 		GZIPInputStream gis = null;
 		ByteArrayInputStream bais = null;		
 		try {
 			bais = new ByteArrayInputStream(payload);
 			if(isGzipped(payload)) {
 				gis = new GZIPInputStream(bais);
-				ois = new CompactObjectInputStream(gis, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
+				ois = new ObjectInputStream(gis);
+						//new CompactObjectInputStream(gis, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
 			} else {
 				gis = null;
-				ois = new CompactObjectInputStream(bais, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
+				ois = new ObjectInputStream(bais);
+						//new CompactObjectInputStream(bais, ClassResolvers.softCachingConcurrentResolver(BulkInvocationBuilder.class.getClassLoader()));
 			}
 			final int cnt = ois.readInt();
 			final T[] arr = (T[])Array.newInstance(type, cnt);
@@ -92,13 +95,15 @@ public class Util {
 	 * @return the byte array
 	 */
 	public static byte[] ser(final boolean gzip, final int estimatedSize, final Object... objs) {
-		CompactObjectOutputStream oos = null;
+//		CompactObjectOutputStream oos = null;
+		ObjectOutputStream oos = null;
 		GZIPOutputStream gos = null;
 		ByteArrayOutputStream baos = null;
 		try {
 			baos = new ByteArrayOutputStream(estimatedSize);
 			gos = gzip ? new GZIPOutputStream(baos) : null;
-			oos = new CompactObjectOutputStream(gzip ? gos : baos);
+			oos = new ObjectOutputStream(gzip ? gos : baos);
+					//new CompactObjectOutputStream(gzip ? gos : baos);
 			oos.writeInt(objs.length);
 			for(Object o: objs) {
 				if(o==null) {

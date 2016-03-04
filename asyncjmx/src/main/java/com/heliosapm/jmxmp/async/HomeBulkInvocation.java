@@ -19,13 +19,14 @@ under the License.
 package com.heliosapm.jmxmp.async;
 
 import java.io.ObjectStreamException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 
 import org.cliffc.high_scale_lib.NonBlockingHashMapLong;
 
 import com.heliosapm.jmxmp.async.server.JMXBulkServiceMBean;
+import com.heliosapm.utils.tuples.NVP;
+
+import co.paralleluniverse.fibers.Fiber;
 
 /**
  * <p>Title: HomeBulkInvocation</p>
@@ -66,12 +67,30 @@ public class HomeBulkInvocation extends BulkInvocation {
 		return this;
 	}
 	
+	public static void log(final Object fmt, final Object...args) {
+		final Fiber f = Fiber.currentFiber();
+		if(f!=null) {
+			System.out.println("f:[" + f.getName() + "]" + String.format(fmt.toString(), args));
+		} else {
+			System.out.println("t:[" + Thread.currentThread().getName() + "]" + String.format(fmt.toString(), args));
+		}
+	}
+	
+	
 	public void send() {
+		if(opCount < 1) return;
 		final BulkResponse br = bulkService.invoke(this);
-		for(final Response r: br.responses()) {
-			final MBeanOp op = r.op;
-			op.handleResponse(r.value, handlers.remove(r.reqId));
-			
+		int key = 0;
+		final List<NVP<MBeanOp, Object>> results = br.getResponses();
+		for(final NVP<MBeanOp, Object> r: results) {
+			final MBeanOp op = r.getKey();
+			final Object result = r.getValue();
+			final AsyncJMXResponseHandler handler = handlers.remove(key);
+			log("Calling back on response [op:%s, key:%s, handler:%s, value:%s]", op, key, handler, result);
+			if(handler!=null) {
+				op.handleResponse(result, handler);
+			}
+			key++;			
 		}
 	}
 	
