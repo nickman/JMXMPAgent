@@ -36,8 +36,12 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import com.heliosapm.jmxmp.domain.DomainMBean;
+import com.heliosapm.jmxmp.domain.DomainServiceInstallerAgent;
 import com.heliosapm.shorthand.attach.vm.VirtualMachine;
 import com.heliosapm.shorthand.attach.vm.VirtualMachineDescriptor;
+import com.heliosapm.utils.jar.JarBuilder;
+import com.heliosapm.utils.jmx.JMXHelper;
 
 /**
  * <p>Title: AgentCmdLine</p>
@@ -55,13 +59,18 @@ public class AgentCmdLine {
 	/** The command name for list */
 	public static final String LIST_CMD = "-list";
 	/** The command name for install */
-	public static final String INSTALL_CMD = "-install";	
+	public static final String INSTALL_CMD = "-install";
+	/** The command name for list domains */
+	public static final String LISTDOMAINS_CMD = "-domains";	
+	
 	/** The agent property set when the JMXMP agent has been installed */
 	public static final String JMXMP_INSTALLED_PROP = "com.heliosapm.jmxmp.installed";
 	/** The default binding interface */
 	public static final String DEFAULT_IFACE = "127.0.0.1";
 	/** The default JMX domain */
 	public static final String DEFAULT_DOMAIN = "DefaultDomain";
+	
+	static File domainAgentJar = null;
 	
 
 	/**
@@ -82,6 +91,8 @@ public class AgentCmdLine {
 					System.exit(-4);					
 				}
 				install(args[1], args[2]);
+			} else if(args[0].equalsIgnoreCase(LISTDOMAINS_CMD)) {
+				listDomains(null);
 			} else {
 				System.err.println("Unrecognized command in argument list " + Arrays.toString(args));
 				System.exit(-2);
@@ -168,6 +179,62 @@ public class AgentCmdLine {
 			}
 			System.out.println(pid + ": " + entry.getValue());
 		}		
+	}
+	
+	private static void listDomains(final String regex) {
+		Pattern p = null;
+		final Map<String, String> vms = new HashMap<String, String>();
+		
+		try {
+			if(regex!=null && !regex.trim().isEmpty()) {
+				p = Pattern.compile(regex.trim(), Pattern.CASE_INSENSITIVE);
+			}
+		} catch (Exception ex) {
+			System.err.println("Invalid Regex [" + regex + "]. Exiting...");
+			System.exit(-3);
+		} 
+		for(final VirtualMachineDescriptor vmd: VirtualMachine.list()) {
+			if(PID.equals(vmd.id())) continue;
+			final String desc = vmd.displayName();
+			if(p!=null) {
+				if(!p.matcher(desc).matches()) continue;
+			}
+			VirtualMachine vm = null;
+			boolean installed = false;
+			try {
+				if(domainAgentJar==null) {
+					domainAgentJar = createDomainAgentJar();
+				}
+				vm = vmd.provider().attachVirtualMachine(vmd);
+				vm.loadAgent(domainAgentJar.getAbsolutePath());
+				final String[] domains = (String[])JMXHelper.getAttribute(vm.getMBeanServerConnection(), DomainMBean.OBJECT_NAME, "DefaultDomains");
+				System.out.println(String.format("PID: %s, Name: %s\n\tDomains: %s", vm.id(), vmd.displayName(), Arrays.toString(domains)));
+				JMXHelper.invoke(DomainMBean.OBJECT_NAME, vm.getMBeanServerConnection(), "remove");
+			} catch (Exception ex) {
+				/* No Op for now ? */
+			} finally {
+				if(vm!=null) try { vm.detach(); } catch (Exception x) {/* No Op */}
+			}
+			vms.put(vmd.id(), (installed ? "(JMXMP Agent Installed) " : "") + desc);
+		}
+	}
+	
+	
+	private static File createDomainAgentJar() {
+		try {
+			final File f = new JarBuilder(File.createTempFile("helios-jmxmp-domainagent-", ".jar"), true)
+					.manifestBuilder()
+					.agentClass(DomainServiceInstallerAgent.class.getName())
+					.createdBy("HeliosJMXMPAgent")
+					.specTitle("HeliosJMXMPAgent")
+					.done()				
+					.res("com.heliosapm.jmxmp.domain").classLoader(com.heliosapm.jmxmp.domain.Domain.class).apply()
+					.build();
+			f.deleteOnExit();
+			return f;
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 	
 	/**
