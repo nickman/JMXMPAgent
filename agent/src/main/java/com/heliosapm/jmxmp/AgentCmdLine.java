@@ -63,8 +63,6 @@ public class AgentCmdLine {
 	/** The command name for list domains */
 	public static final String LISTDOMAINS_CMD = "-domains";	
 	
-	/** The agent property set when the JMXMP agent has been installed */
-	public static final String JMXMP_INSTALLED_PROP = "com.heliosapm.jmxmp.installed";
 	/** The default binding interface */
 	public static final String DEFAULT_IFACE = "127.0.0.1";
 	/** The default JMX domain */
@@ -119,9 +117,15 @@ public class AgentCmdLine {
 			final File f = new File(AgentCmdLine.class.getProtectionDomain().getCodeSource().getLocation().getFile());
 			vm.loadAgent(f.getAbsolutePath(), specs);
 //			parsedSpecs = SpecParser.parseSpecs(specs);
-			
+			final Properties p = vm.getSystemProperties();
+			for(final String key: p.stringPropertyNames()) {
+				if(key.startsWith(JMXMPConnector.URL_PROPERTY)) {
+					System.out.println(key + "=" + p.getProperty(key));
+				}
+			}
 		} catch (Exception ex) {
 			System.err.println("Failed to attach to JVM [" + pid + "]: " + ex.getMessage());
+			ex.printStackTrace(System.err);
 			System.exit(-5);
 		}
 	}
@@ -158,27 +162,42 @@ public class AgentCmdLine {
 				if(!p.matcher(desc).matches()) continue;
 			}
 			VirtualMachine vm = null;
-			boolean installed = false;
+			String installed = null;
 			try {
 				vm = vmd.provider().attachVirtualMachine(vmd);
 				final Properties ap = vm.getAgentProperties();
 				final Properties sp = vm.getSystemProperties();
-				installed = (ap.containsKey(JMXMP_INSTALLED_PROP) || sp.containsKey(JMXMP_INSTALLED_PROP));
+				installed = getJMXMPUrl(ap, sp);
+				if(installed!=null) {
+					System.out.println(vmd.id());
+					System.out.println(installed);
+				}
 			} catch (Exception ex) {
 				/* No Op for now ? */
 			} finally {
 				if(vm!=null) try { vm.detach(); } catch (Exception x) {/* No Op */}
 			}
-			vms.put(vmd.id(), (installed ? "(JMXMP Agent Installed) " : "") + desc);
 		}
-		for(Map.Entry<String, String> entry: vms.entrySet()) {
-			String pid = entry.getKey();
-			final int pads = 10 - pid.length();
-			for(int i = 0; i < pads; i++) {
-				pid = pid.concat(" ");
+	}
+	
+	private static String getJMXMPUrl(final Properties... props) {
+		final StringBuilder b = new StringBuilder();
+		final Map<String, String> map = new HashMap<String, String>();
+		for(final Properties p: props) {
+			for(final String key: p.stringPropertyNames()) {
+				if(key.startsWith(JMXMPConnector.URL_PROPERTY)) {
+					map.put(key, p.getProperty(key));				
+				}
 			}
-			System.out.println(pid + ": " + entry.getValue());
-		}		
+		}
+		if(map.isEmpty()) return null;
+		for(Map.Entry<String, String> entry: map.entrySet()) {
+			if(b.length() > 0) {
+				b.append("\n");
+			}		
+			b.append(entry.getKey() + "=" + entry.getValue());
+		}
+		return b.toString();
 	}
 	
 	private static void listDomains(final String regex) {

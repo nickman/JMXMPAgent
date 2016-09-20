@@ -36,6 +36,7 @@ import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 
 import com.heliosapm.jmxmp.spec.SpecField;
+import com.heliosapm.utils.jmx.JMXHelper;
 
 /**
  * <p>Title: JMXMPConnector</p>
@@ -49,7 +50,7 @@ public class JMXMPConnector implements Closeable {
 	/** The connector server bind address */
 	protected final String bindAddress;
 	/** The connector server listening port */
-	protected final int port;
+	protected int port;
 	/** The MBeanServer the connector is exposing */
 	protected final MBeanServer server;
 	/** The connector server JMXServiceURL */
@@ -64,6 +65,9 @@ public class JMXMPConnector implements Closeable {
 	
 	/** The connector server JMXServiceURL template */
 	public static final String JMX_URL = "service:jmx:jmxmp://%s:%s";
+	
+	/** The system and agent properties key prefix where the jmxmp url will be published */
+	public static final String URL_PROPERTY = "javax.management.remote.jmxmp.url.";
 	
 	/**
 	 * Creates a new JMXMPConnector
@@ -120,13 +124,15 @@ public class JMXMPConnector implements Closeable {
 	public void start() throws Exception {
 		if(!connectorServer.isActive()) {
 			final Throwable[] exRef = new Throwable[1];
+			final String[] jmxUrl = new String[1];
 			final boolean[] complete = new boolean[]{false};
 			final Thread starterThread = new Thread("JMXMPServer-Starter-Thread") {
 				@Override
 				public void run() {
 					try {
 						connectorServer.start();
-						log.info("Started JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]");
+						jmxUrl[0] = connectorServer.getAddress().toString();
+						log.info("Started JMXMPServer on [" + jmxUrl[0] + "] for MBeanServer [" + domain + "]");
 						complete[0] = true;
 					} catch (Exception ex) {
 						log.log(Level.SEVERE, "Failed to start JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]", ex);
@@ -144,6 +150,10 @@ public class JMXMPConnector implements Closeable {
 					} 
 					throw new Exception("JMXMP server not started after 10 secs.");
 				}
+				final String install = jmxUrl[0];
+				final String key = URL_PROPERTY + domain;
+				System.setProperty(key, install);
+				JMXHelper.getAgentProperties().setProperty(key, install);
 			} catch (InterruptedException iex) {
 				// should not happen
 				throw new Exception("Thread interrupted while waiting for JMXMP server to start", iex);
