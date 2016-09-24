@@ -8,7 +8,8 @@
 	<name>Helios JMXMP :: All</name>
 	<modules>
 		<module>agent</module>		
-		<module>asyncjmx</module>		
+		<module>asyncjmx</module>
+		<module>agent-publisher</module>
 	</modules>
 	<properties>
   	<!-- Misc -->
@@ -23,6 +24,7 @@
 		<ganymed.version>262</ganymed.version>
 		<json.version>20140107</json.version>
 		<jcommander.version>1.35</jcommander.version>
+		<curator.version>2.10.0</curator.version>
 		<!-- Plugin Versions -->
 		<jarjar-plugin.version>1.9</jarjar-plugin.version>
 		<jar-plugin.version>2.3</jar-plugin.version>
