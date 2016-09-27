@@ -25,6 +25,7 @@
 		<json.version>20140107</json.version>
 		<jcommander.version>1.35</jcommander.version>
 		<curator.version>2.10.0</curator.version>
+		<args4j.version>2.0.29</args4j.version>
 		<!-- Plugin Versions -->
 		<jarjar-plugin.version>1.9</jarjar-plugin.version>
 		<jar-plugin.version>2.3</jar-plugin.version>
@@ -49,16 +50,11 @@
 			</dependency>
 
 			<dependency>
-			  <groupId>com.sun.jdmk</groupId>
-			  <artifactId>jmx-optional</artifactId>
-			  <version>${jmx-optional.version}</version>
+				<groupId>args4j</groupId>
+				<artifactId>args4j</artifactId>
+				<version>${args4j.version}</version>
 			</dependency>
 
-			<dependency>
-			  <groupId>ch.ethz.ganymed</groupId>
-			  <artifactId>ganymed-ssh2</artifactId>
-			  <version>${ganymed.version}</version>
-			</dependency>
 
 			<dependency>
 				<groupId>com.beust</groupId>
