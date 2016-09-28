@@ -54,7 +54,7 @@ public class JMXMPSpecOptionHandler extends OptionHandler<JMXMPSpec[]> {
 	 */
 	@Override
 	public String getDefaultMetaVariable() {
-		return "JMXMP Spec: [<port>]:[<bind-interface>]:[<jmx-domain>][,[<additional-specs>]]";
+		return "JMXMPSpec";
 	}
 
 	/**
@@ -64,20 +64,12 @@ public class JMXMPSpecOptionHandler extends OptionHandler<JMXMPSpec[]> {
 	@Override
 	public int parseArguments(final Parameters parameters) throws CmdLineException {
 		final Set<JMXMPSpec> specs = new LinkedHashSet<JMXMPSpec>();
-		int consumed = 0;
-		for(int i =  0; i < parameters.size(); i++) {
-			try {
-				final JMXMPSpec[] jspec = JMXMPSpec.parse(parameters.getParameter(i));
-				consumed++;
-				Collections.addAll(specs, jspec);
-			} catch (Exception ex) {
-				break;
-			}
-		}
+		final JMXMPSpec[] jspec = JMXMPSpec.parse(parameters.getParameter(0));
+		Collections.addAll(specs, jspec);		
 		if(specs.isEmpty()) specs.add(new JMXMPSpec());
 		final JMXMPSpec[] jspecs = specs.toArray(new JMXMPSpec[specs.size()]);
 		setter.addValue(jspecs);
-		return consumed;
+		return 1;
 	}
 
 }

@@ -18,6 +18,8 @@ under the License.
  */
 package com.heliosapm.endpoint.publisher;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -25,14 +27,14 @@ import com.heliosapm.utils.lang.StringHelper;
 
 /**
  * <p>Title: JMXMPSpec</p>
- * <p>Description: Definition for a JMXMP Connection Server installation</p> 
+ * <p>Description: Definition for a JMXMP Connection Server installation and the advertised endpoints accessible therein</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
  * <p><code>com.heliosapm.endpoint.publisher.JMXMPSpec</code></p>
  */
 
 public class JMXMPSpec {
 	/** The specs delimeter */
-	public static final char MULTI_DELIM = ',';	
+	public static final char MULTI_DELIM = ';';	
 	/** The spec delimeter */
 	public static final char DELIM = ':';
 	/** The default bind interface */
@@ -41,6 +43,8 @@ public class JMXMPSpec {
 	public static final String DEFAULT_DOMAIN = "DefaultDomain";
 	/** The default JMXMP listening port */
 	public static final int DEFAULT_PORT = 1818;
+	/** The default advertised endpoints */
+	public static final String[] DEFAULT_ENDPOINTS = {};
 	
 	/** The configured bind interface */
 	protected String bindInterface = DEFAULT_BIND;
@@ -48,6 +52,8 @@ public class JMXMPSpec {
 	protected String jmxDomain = DEFAULT_DOMAIN;
 	/** The configured JMXMP listening port */
 	protected int port = DEFAULT_PORT;
+	/** The configured endpoints */
+	protected String[] endpoints = DEFAULT_ENDPOINTS;
 	
 	/**
 	 * Creates a new JMXMPSpec
@@ -72,16 +78,21 @@ public class JMXMPSpec {
 			final JMXMPSpec jspec = new JMXMPSpec();
 			if(specFrags.length > 0) {
 				if(specFrags[0]!=null && !specFrags[0].trim().isEmpty()) {
-					jspec.setPort(Integer.parseInt(specFrags[0].trim()));
+					jspec.setEndpoints(StringHelper.splitString(specFrags[0], ',', true));
 				}
 				if(specFrags.length > 1) {
 					if(specFrags[1]!=null && !specFrags[1].trim().isEmpty()) {
-						jspec.setBindInterface(specFrags[1].trim());
+						jspec.setPort(Integer.parseInt(specFrags[1].trim()));
 					}
 				}
 				if(specFrags.length > 2) {
 					if(specFrags[2]!=null && !specFrags[2].trim().isEmpty()) {
-						jspec.setJmxDomain(specFrags[2].trim());
+						jspec.setBindInterface(specFrags[2].trim());
+					}
+				}
+				if(specFrags.length > 3) {
+					if(specFrags[3]!=null && !specFrags[3].trim().isEmpty()) {
+						jspec.setJmxDomain(specFrags[3].trim());
 					}					
 				}				
 			}
@@ -104,7 +115,7 @@ public class JMXMPSpec {
 	 * Sets the binding interface for the JMXMP connector server
 	 * @param bindInterface the bind interface to set
 	 */
-	public void setBindInterface(final String bindInterface) {
+	protected void setBindInterface(final String bindInterface) {
 		if(bindInterface==null || bindInterface.trim().isEmpty()) throw new IllegalArgumentException("The passed bind interface was null or empty");
 		this.bindInterface = bindInterface.trim();
 	}
@@ -121,7 +132,7 @@ public class JMXMPSpec {
 	 * Sets the jmx domain
 	 * @param jmxDomain the jmx domain to set
 	 */
-	public void setJmxDomain(final String jmxDomain) {
+	protected void setJmxDomain(final String jmxDomain) {
 		if(jmxDomain==null || jmxDomain.trim().isEmpty()) throw new IllegalArgumentException("The passed JMX Domain was null or empty");
 		this.jmxDomain = jmxDomain.trim();
 	}
@@ -138,9 +149,31 @@ public class JMXMPSpec {
 	 * Sets the JMXMP listening port
 	 * @param port the JMXMP listening port
 	 */
-	public void setPort(final int port) {
+	protected void setPort(final int port) {
 		if(port < 0 || port > 65534) throw new IllegalArgumentException("Invalid port [" + port + "]");
 		this.port = port;
+	}
+	
+	/**
+	 * Returns the advertised endpoints
+	 * @return the advertised endpoints
+	 */
+	public String[] getEndpoints() {
+		return endpoints.clone();
+	}
+	
+	/**
+	 * Sets the endpoints
+	 * @param endpoints the endpoints to set
+	 */
+	protected void setEndpoints(final String...endpoints) {
+		final Set<String> eps = new LinkedHashSet<String>();
+		for(String ep: endpoints) {
+			if(ep==null || ep.trim().isEmpty()) continue;
+			eps.add(ep.trim());
+		}
+		if(eps.isEmpty()) System.err.println("[JMXMPSpec] WARNING: No endpoints defined");
+		this.endpoints = eps.toArray(new String[eps.size()]);
 	}
 
 	/**
@@ -149,7 +182,7 @@ public class JMXMPSpec {
 	 */
 	@Override
 	public String toString() {
-		return String.format("%s:%s:%s", port, bindInterface, jmxDomain);
+		return String.format("%s:%s:%s:%s", Arrays.toString(endpoints), port, bindInterface, jmxDomain);
 	}
 
 	/**
