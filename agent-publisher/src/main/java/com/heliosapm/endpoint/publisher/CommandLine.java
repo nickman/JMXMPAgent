@@ -40,6 +40,10 @@ public class CommandLine {
 	protected AgentCommand command = null;
 	/** The PID of the JVM process to install into */
 	protected long pid = -1;
+	/** The overridden host name that should be published for the target JVM */
+	protected String host = null;
+	/** The overridden app name that should be published for the target JVM */
+	protected String app = null;
 
 	/**
 	 * Creates a new CommandLine
@@ -163,6 +167,38 @@ public class CommandLine {
 	 */
 	public long getPid() {
 		return pid;
+	}
+
+	/**
+	 * Returns the overriden host name to be published for the target JVM
+	 * @return the overriden host name or null if not overriden
+	 */
+	public String getHost() {
+		return host;
+	}
+
+	/**
+	 * Returns the overriden app name to be published for the target JVM
+	 * @return the overriden app name or null if not overriden
+	 */
+	public String getApp() {
+		return app;
+	}
+
+	/**
+	 * Sets the overriden host name to be published for the target JVM
+	 * @return the overriden host name
+	 */
+	public void setHost(final String host) {
+		this.host = host;
+	}
+
+	/**
+	 * Sets the overriden app name to be published for the target JVM
+	 * @param app the overriden app name
+	 */
+	public void setApp(final String app) {
+		this.app = app;
 	}
 
 }
