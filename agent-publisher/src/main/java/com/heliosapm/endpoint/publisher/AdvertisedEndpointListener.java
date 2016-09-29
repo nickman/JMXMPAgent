@@ -19,32 +19,21 @@ under the License.
 package com.heliosapm.endpoint.publisher;
 
 /**
- * <p>Title: AgentCommand</p>
- * <p>Description: Enumerates the agent commands that can be issued on the command-line</p> 
+ * <p>Title: AdvertisedEndpointListener</p>
+ * <p>Description: Defines a listener to be notified of new onlined AdvertisedEndpoints and disappeared offlined AdvertisedEndpoints</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.AgentCommand</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.AdvertisedEndpointListener</code></p>
  */
 
-public enum AgentCommand implements AgentCommandProcessor {
-	/** List JVMs */
-	LIST(new ListCommandProcessor()),
-	/** Install the agent into a JVM */
-	INSTALL(new InstallCommandProcessor());
-	
-	private AgentCommand(final AgentCommandProcessor processor) {
-		this.processor = processor;
-	}
-	
-	private final AgentCommandProcessor processor;
-
+public interface AdvertisedEndpointListener {
 	/**
-	 * {@inheritDoc}
-	 * @see com.heliosapm.endpoint.publisher.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.CommandLine)
+	 * Fired when an AdvertisedEndpoint comes on line
+	 * @param endpoint the online AdvertisedEndpoint
 	 */
-	@Override
-	public String processCommand(final CommandLine cmdLine) {
-		return processor.processCommand(cmdLine);
-	}
+	public void onOnlineAdvertisedEndpoint(final AdvertisedEndpoint endpoint);
+	/**
+	 * Fired when an AdvertisedEndpoint goes off line
+	 * @param endpoint the offline AdvertisedEndpoint
+	 */
+	public void onOfflineAdvertisedEndpoint(final AdvertisedEndpoint endpoint);
 }
-
-

@@ -19,32 +19,17 @@ under the License.
 package com.heliosapm.endpoint.publisher;
 
 /**
- * <p>Title: AgentCommand</p>
- * <p>Description: Enumerates the agent commands that can be issued on the command-line</p> 
+ * <p>Title: AgentNameChangeListener</p>
+ * <p>Description: Defines a listener that is notified when there are changes to the agent name</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.AgentCommand</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.AgentNameChangeListener</code></p>
  */
 
-public enum AgentCommand implements AgentCommandProcessor {
-	/** List JVMs */
-	LIST(new ListCommandProcessor()),
-	/** Install the agent into a JVM */
-	INSTALL(new InstallCommandProcessor());
-	
-	private AgentCommand(final AgentCommandProcessor processor) {
-		this.processor = processor;
-	}
-	
-	private final AgentCommandProcessor processor;
-
+public interface AgentNameChangeListener {
 	/**
-	 * {@inheritDoc}
-	 * @see com.heliosapm.endpoint.publisher.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.CommandLine)
+	 * Callback when the host or app changes name
+	 * @param app The new app name, or null if only the host changed
+	 * @param host The new host name, or null if only the app changed
 	 */
-	@Override
-	public String processCommand(final CommandLine cmdLine) {
-		return processor.processCommand(cmdLine);
-	}
+	public void onAgentNameChange(String app, String host);
 }
-
-

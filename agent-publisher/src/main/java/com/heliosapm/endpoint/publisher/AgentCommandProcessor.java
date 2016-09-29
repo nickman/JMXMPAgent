@@ -19,32 +19,17 @@ under the License.
 package com.heliosapm.endpoint.publisher;
 
 /**
- * <p>Title: AgentCommand</p>
- * <p>Description: Enumerates the agent commands that can be issued on the command-line</p> 
+ * <p>Title: AgentCommandProcessor</p>
+ * <p>Description: Defines a class that processes an instance of an agent command</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.AgentCommand</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.AgentCommandProcessor</code></p>
  */
 
-public enum AgentCommand implements AgentCommandProcessor {
-	/** List JVMs */
-	LIST(new ListCommandProcessor()),
-	/** Install the agent into a JVM */
-	INSTALL(new InstallCommandProcessor());
-	
-	private AgentCommand(final AgentCommandProcessor processor) {
-		this.processor = processor;
-	}
-	
-	private final AgentCommandProcessor processor;
-
+public interface AgentCommandProcessor {
 	/**
-	 * {@inheritDoc}
-	 * @see com.heliosapm.endpoint.publisher.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.CommandLine)
+	 * Executes the passed command line sourced directive
+	 * @param cmdLine The command line directive
+	 * @return the response message
 	 */
-	@Override
-	public String processCommand(final CommandLine cmdLine) {
-		return processor.processCommand(cmdLine);
-	}
+	public String processCommand(CommandLine cmdLine);
 }
-
-

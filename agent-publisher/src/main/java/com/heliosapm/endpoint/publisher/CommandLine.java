@@ -32,6 +32,9 @@ import org.kohsuke.args4j.Option;
  */
 
 public class CommandLine {
+	// ==================================================================================
+	//			Install command arguments
+	// ==================================================================================
 	/** The parsed out JMXSpecs */
 	protected JMXMPSpec[] specs = {};
 	/** The Zookeeper connection string */
@@ -44,6 +47,16 @@ public class CommandLine {
 	protected String host = null;
 	/** The overridden app name that should be published for the target JVM */
 	protected String app = null;
+	
+	
+	// ==================================================================================
+	//			List command arguments
+	// ==================================================================================
+	protected boolean showAgentProps = false;
+	protected boolean showSystemProps = false;
+	protected boolean showJMXMP = false;
+	protected boolean showAgentName = false;
+	
 
 	/**
 	 * Creates a new CommandLine
@@ -57,6 +70,10 @@ public class CommandLine {
 			"install",
 			"--specs",
 			"foo,bar,jvm,kafka:8192:0.0.0.0:DefaultDomain;jdatasources,tomcat:8193:0.0.0.0:jboss",
+			"--host",
+			"appServer5",
+			"--app",
+			"stream-boy"
 //			"--zk",
 //			"localhost:2181,localhost:2182"
 		};
@@ -73,7 +90,7 @@ public class CommandLine {
             // handling of wrong arguments
             System.err.println(e.getMessage());
             parser.printUsage(System.err);
-        }		
+        }		 
 	}
 	
 	public static void log(Object msg) {
@@ -98,6 +115,25 @@ public class CommandLine {
 		if(connectString==null || connectString.trim().isEmpty()) throw new IllegalArgumentException("The passed ZK connect string was nul or empty");
 		this.zookeep = connectString.trim();
 	}
+	
+	/**
+	 * Sets the overriden host name to be published for the target JVM
+	 * @param host the overriden host name
+	 */
+	@Option(name="--host", usage="Overrides the published host name", metaVar="HOST")
+	protected void setHost(final String host) {
+		this.host = host;
+	}
+
+	/**
+	 * Sets the overriden app name to be published for the target JVM
+	 * @param app the overriden app name
+	 */
+	@Option(name="--app", usage="Overrides the published app name", metaVar="APP")
+	protected void setApp(final String app) {
+		this.app = app;
+	}
+	
 	
 	/**
 	 * Sets the agent command
@@ -144,6 +180,8 @@ public class CommandLine {
 		final StringBuilder b = new StringBuilder("Publisher Configuration:");
 		b.append("\n\tAgent Command: ").append(command);
 		b.append("\n\tTarget PID: ").append(pid);
+		b.append("\n\tPublished host override: ").append(host);
+		b.append("\n\tPublished app override: ").append(app);
 		b.append("\n\tJMXMP and Endpoint Specs:");
 		for(JMXMPSpec spec: specs) {
 			b.append("\n\t\t").append(spec);
@@ -185,20 +223,5 @@ public class CommandLine {
 		return app;
 	}
 
-	/**
-	 * Sets the overriden host name to be published for the target JVM
-	 * @return the overriden host name
-	 */
-	public void setHost(final String host) {
-		this.host = host;
-	}
-
-	/**
-	 * Sets the overriden app name to be published for the target JVM
-	 * @param app the overriden app name
-	 */
-	public void setApp(final String app) {
-		this.app = app;
-	}
 
 }

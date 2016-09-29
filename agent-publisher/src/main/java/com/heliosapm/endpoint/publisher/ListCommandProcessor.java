@@ -19,23 +19,13 @@ under the License.
 package com.heliosapm.endpoint.publisher;
 
 /**
- * <p>Title: AgentCommand</p>
- * <p>Description: Enumerates the agent commands that can be issued on the command-line</p> 
+ * <p>Title: ListCommandProcessor</p>
+ * <p>Description: Command processor to list running JVMs and any installed JMXMP services</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.AgentCommand</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.ListCommandProcessor</code></p>
  */
 
-public enum AgentCommand implements AgentCommandProcessor {
-	/** List JVMs */
-	LIST(new ListCommandProcessor()),
-	/** Install the agent into a JVM */
-	INSTALL(new InstallCommandProcessor());
-	
-	private AgentCommand(final AgentCommandProcessor processor) {
-		this.processor = processor;
-	}
-	
-	private final AgentCommandProcessor processor;
+public class ListCommandProcessor implements AgentCommandProcessor {
 
 	/**
 	 * {@inheritDoc}
@@ -43,8 +33,8 @@ public enum AgentCommand implements AgentCommandProcessor {
 	 */
 	@Override
 	public String processCommand(final CommandLine cmdLine) {
-		return processor.processCommand(cmdLine);
+		final StringBuilder b = new StringBuilder("[ListCommandProcessor]:");
+		return b.toString();
 	}
+
 }
-
-
