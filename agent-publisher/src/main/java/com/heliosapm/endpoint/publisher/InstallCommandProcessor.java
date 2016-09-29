@@ -50,6 +50,8 @@ public class InstallCommandProcessor implements AgentCommandProcessor {
 		} finally {
 			if(vm!=null) try { vm.detach(); } catch (Exception x) {/* No Op */}
 		}
+		
+		
 //		/** The parsed out JMXSpecs */
 //		protected JMXMPSpec[] specs = {};
 //		/** The Zookeeper connection string */
