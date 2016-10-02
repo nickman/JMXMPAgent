@@ -18,9 +18,20 @@ under the License.
  */
 package com.heliosapm.endpoint.publisher;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Properties;
+import java.util.Set;
 
+import javax.management.MBeanServer;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.jmxmp.JMXMPConnectorServer;
+
+import org.cliffc.high_scale_lib.NonBlockingHashSet;
+
+import com.heliosapm.jmxmp.JMXMPConnector;
 import com.heliosapm.shorthand.attach.vm.VirtualMachine;
+import com.heliosapm.utils.jmx.JMXHelper;
 
 /**
  * <p>Title: InstallCommandProcessor</p>
@@ -29,7 +40,40 @@ import com.heliosapm.shorthand.attach.vm.VirtualMachine;
  * <p><code>com.heliosapm.endpoint.publisher.InstallCommandProcessor</code></p>
  */
 
-public class InstallCommandProcessor implements AgentCommandProcessor {
+public class InstallCommandProcessor extends AbstractAgentCommandProcessor {
+	
+	/** Format for a JMXMP JMXServiceURL */
+	public static final String JMXMP_URL_FORMAT = "service:jmx:jmxmp://%s:%s";
+	
+	/** A set of installed JMXMP connector servers */
+	private static final Set<JMXMPConnectorServer> servers = new NonBlockingHashSet<JMXMPConnectorServer>();
+	
+	static {
+		AccessController.doPrivileged(new PrivilegedAction<Void>() {
+			@Override
+			public Void run() {
+				Runtime.getRuntime().addShutdownHook(new Thread(){
+					public void run() {
+						if(!servers.isEmpty()) {
+							SimpleLogger.log("Shutting down JMXMP Connector Servers");
+							for(final JMXMPConnectorServer server: servers) {
+								AccessController.doPrivileged(new PrivilegedAction<Void>() {
+									@Override
+									public Void run() {
+										try { server.stop(); } catch (Exception x) {/* No Op */}
+										return null;
+									}
+								});
+								
+							}
+							servers.clear();
+						}
+					}
+				});
+				return null;
+			}
+		});
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -37,35 +81,57 @@ public class InstallCommandProcessor implements AgentCommandProcessor {
 	 */
 	@Override
 	public String processCommand(final CommandLine cmdLine) {
+		// register zookeep sysprop
+		// register app/host
+		AgentName.getInstance().resetNames(cmdLine.getApp(), cmdLine.getHost());
+		final String zookeepConnect = cmdLine.getZookeep();
+		final boolean zkProvided = zookeepConnect!=null && !zookeepConnect.trim().isEmpty();
+		if(zkProvided) {
+			setProperty(ZK_CONNECT_PROP, zookeepConnect.trim());
+		}
 		final StringBuilder b = new StringBuilder("[InstallCommandProcessor]:");
 		VirtualMachine vm = null;
 		try {
 			vm = VirtualMachine.attach("" + cmdLine.getPid());
-			final Properties sysProps = vm.getSystemProperties();
-			final Properties agentProps = vm.getAgentProperties();
-			
+			for(final JMXMPSpec spec: cmdLine.getJMXMPSpecs()) {
+				try {
+					final String[] endpoints = spec.getEndpoints();
+					final String bind = spec.getBindInterface();
+					final int port = spec.getPort();
+					final String svc = String.format(JMXMP_URL_FORMAT, bind, port);
+					final JMXServiceURL serviceUrl = JMXHelper.serviceUrl(svc);
+					final MBeanServer[] server = new MBeanServer[1];
+					final JMXMPConnectorServer[] connectorServer = new JMXMPConnectorServer[1];
+					final int[] actualPort = new int[1];
+					AccessController.doPrivileged(new PrivilegedAction<Void>() {
+						@Override
+						public Void run() {
+							try {
+								server[0] = JMXMPConnector.getMBeanServer(spec.getJmxDomain());
+								connectorServer[0] = new JMXMPConnectorServer(serviceUrl, null, server[0]);
+								connectorServer[0].start();
+								servers.add(connectorServer[0]);
+								actualPort[0] = connectorServer[0].getAddress().getPort();
+								if(endpoints!=null && endpoints.length > 0) {
+									addEndpoints(svc, endpoints);
+								}
+								return null;
+							} catch (Exception ex) {
+								throw new RuntimeException(ex);
+							}
+						}
+					});
+					
+				} catch (Exception ex) {
+					throw new RuntimeException(ex);
+				}
+			}
 		} catch (Exception ex) {
 			b.insert(0, "ERROR ");
 			b.append("Install failed:").append(ex);
 		} finally {
 			if(vm!=null) try { vm.detach(); } catch (Exception x) {/* No Op */}
 		}
-		
-		
-//		/** The parsed out JMXSpecs */
-//		protected JMXMPSpec[] specs = {};
-//		/** The Zookeeper connection string */
-//		protected String zookeep = null;
-//		/** The agent command to execute */
-//		protected AgentCommand command = null;
-//		/** The PID of the JVM process to install into */
-//		protected long pid = -1;
-//		/** The overridden host name that should be published for the target JVM */
-//		protected String host = null;
-//		/** The overridden app name that should be published for the target JVM */
-//		protected String app = null;
-		
-		
 		return b.toString();
 	}
 

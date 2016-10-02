@@ -26,6 +26,13 @@ package com.heliosapm.endpoint.publisher;
  */
 
 public interface AgentCommandProcessor {
+	/** The system and agent property key that keys a comma separated list of installed connector JMX URLs */
+	public static final String JMXMP_CONNECTORS_PROP = "jmxmp.connectors";
+	/** The system and agent property key that keys a JSON string of jmx-connector URLs to advertised endpoints */
+	public static final String JMXMP_ENDPOINTS_PROP = "jmxmp.endpoints";
+	/** The system and agent property key that keys the set Zookeeper connect string */
+	public static final String ZK_CONNECT_PROP = EndpointPublisher.ZK_CONNECT_CONF;
+	
 	/**
 	 * Executes the passed command line sourced directive
 	 * @param cmdLine The command line directive

@@ -84,7 +84,11 @@ public class JMXMPConnector implements Closeable {
 	 * @return the MBeanServer or null
 	 */
 	public static MBeanServer getMBeanServer(final String domain) {
-		if(domain.equals("DefaultDomain")) return ManagementFactory.getPlatformMBeanServer();
+		System.out.println("Looking for MBeanServer: [" + domain + "]");
+		
+		try { 
+			if(domain.equals("DefaultDomain")) return ManagementFactory.getPlatformMBeanServer();
+		} catch (Exception x) {/* No Op */}
 		for(MBeanServer server: MBeanServerFactory.findMBeanServer(null)) {			
 			final String serverDomain = server.getDefaultDomain();
 			if(serverDomain==null && domain.equals("null")) return server;  // some custom MBeanServers create the platform with a null domain

@@ -61,22 +61,22 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 	private static final Object lock = new Object();
 	
 	/** The config key for the ZooKeeper connect string */
-	public static final String ZK_CONNECT_CONF = "streamhub.discovery.zookeeper.connect";
+	public static final String ZK_CONNECT_CONF = "discovery.zookeeper.connect";
 	/** The default ZooKeeper connect string */
 	public static final String ZK_CONNECT_DEFAULT = "localhost:2181";
 
 	/** The config key for the advertised service type */
-	public static final String SERVICE_TYPE_CONF = "streamhub.discovery.servicetype";
+	public static final String SERVICE_TYPE_CONF = "discovery.servicetype";
 	/** The default advertised service type */
 	public static final String SERVICE_TYPE_DEFAULT = "/monitoring-endpoints";
 
 	/** The config key for the zookeeper session timeout */
-	public static final String DISC_SESS_TO_CONF = "streamhub.discovery.timeout.session";
+	public static final String DISC_SESS_TO_CONF = "discovery.timeout.session";
 	/** The default zookeeper session timeout in ms. */
 	public static final int DISC_SESS_TO_DEFAULT = 60 * 1000;
 	
 	/** The config key for the zookeeper connect timeout */
-	public static final String DISC_CONN_TO_CONF = "streamhub.discovery.timeout.connection";
+	public static final String DISC_CONN_TO_CONF = "discovery.timeout.connection";
 	/** The default zookeeper session timeout in ms. */
 	public static final int DISC_CONN_TO_DEFAULT = 15 * 1000;
 
@@ -176,7 +176,19 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 		intendToClose.set(true);		
 		try { curator.close(); } catch (Exception x) {/* No Op */}
 		unregistered.clear();
-		registered.clear();		
+		registered.clear();				
+	}
+	
+	/**
+	 * Resets this instance and returns a new one
+	 * @return a new EndpointPublisher if this one is not already closed
+	 */
+	public synchronized EndpointPublisher reset() {
+		if(!intendToClose.get()) {
+			try { close(); } catch (Exception x) {/* No Op */}
+			instance = null;
+		}
+		return getInstance();
 	}
 	
 	/**
@@ -185,7 +197,7 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 	 */
 	@Override
 	public void stateChanged(final CuratorFramework client, final ConnectionState newState) {
-		log("ZK Connection State Change to [%s]", newState.name());
+		SimpleLogger.log("ZK Connection State Change to [%s]", newState.name());
 		connected.set(newState.isConnected());
 		switch(newState) {			
 			case CONNECTED:							
@@ -227,7 +239,7 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 						.inBackground(new BackgroundCallback() {
 							@Override
 							public void processResult(final CuratorFramework client, final CuratorEvent event) throws Exception {								
-								log("Register callback. rc:%s, path:[%s], ctx:[%s], name:[%s]", event.getResultCode(), event.getPath(), event.getContext(), event.getName());
+								SimpleLogger.log("Register callback. rc:%s, path:[%s], ctx:[%s], name:[%s]", event.getResultCode(), event.getPath(), event.getContext(), event.getName());
 								if(event.getResultCode() >= 0) {									
 									registered.put(endpoint.getId(), endpoint);
 									unregistered.remove(endpoint.getId());																
@@ -235,11 +247,11 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 							}
 						}, executor).forPath(zkPath, endpoint.toByteArray());
 				} catch (Exception ex) {
-					elog("Failed to register endpoint [%s]",  ex, endpoint.getId());
+					SimpleLogger.elog("Failed to register endpoint [%s]",  ex, endpoint.getId());
 				}
 				
 			} catch (Exception ex) {
-				elog("Failed to register endpoint [%s]",  ex, endpoint);
+				SimpleLogger.elog("Failed to register endpoint [%s]",  ex, endpoint);
 			}
 		}
 	}
@@ -336,7 +348,7 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 	
 
 	public static void main(String[] args) {
-		log("PublisherTest");
+		SimpleLogger.log("PublisherTest");
 		final String template = "{ \"jmx\" : \"service:jmx:jmxmp://localhost:%s\", \"host\" : \"%s\", \"app\" : \"%s\",  \"port\" : \"%s\"," + 
 				"\"endpoints\" : [\"kafka\", \"jvm\"] }";
 		final EndpointPublisher p = EndpointPublisher.getInstance();
@@ -354,7 +366,7 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 		}
 //		for(int i = 0; i < 20; i++) {
 //			String s = String.format(template, 1420 + i, "FooApp", 1420 + i);
-//			log("  ---- REG:" + s);
+//			SimpleLogger.log("  ---- REG:" + s);
 //			final AdvertisedEndpoint ae = JSONOps.parseToObject(s, AdvertisedEndpoint.class);
 //			p.register(ae);
 //		}
@@ -372,33 +384,5 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 		
 	}
 	
-	/**
-	 * Low maintenance formatted out logger
-	 * @param fmt The message format
-	 * @param args The message fillins
-	 */
-	public static void log(final Object fmt, final Object...args) {
-		System.out.println(String.format(fmt.toString(), args));
-	}
-	
-	/**
-	 * Low maintenance formatted err logger
-	 * @param fmt The message format
-	 * @param t An optional throwable
-	 * @param args The message fillins
-	 */
-	public static void elog(final Object fmt, final Throwable t, final Object...args) {
-		System.err.println(String.format(fmt.toString(), args));
-		if(t!=null) t.printStackTrace(System.err);
-	}
-
-	/**
-	 * Low maintenance formatted err logger
-	 * @param fmt The message format
-	 * @param args The message fillins
-	 */
-	public static void elog(final Object fmt, final Object...args) {
-		elog(fmt, null, args);
-	}
 	
 }

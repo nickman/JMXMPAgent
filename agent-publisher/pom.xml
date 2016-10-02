@@ -100,8 +100,8 @@
 				  </manifest>
 				  <manifestEntries>
 					    		<Main-Class>com.heliosapm.jmxmp.AgentCmdLine</Main-Class> 
-					    		<Premain-Class>com.heliosapm.jmxmp.Agent</Premain-Class>
-				            	<Agent-Class>com.heliosapm.jmxmp.Agent</Agent-Class>
+					    		<Premain-Class>com.heliosapm.endpoint.publisher.Agent</Premain-Class>
+				            	<Agent-Class>com.heliosapm.endpoint.publisher.Agent</Agent-Class>
 				            	<Can-Redefine-Classes>true</Can-Redefine-Classes>
 				            	<Can-Retransform-Classes>true</Can-Retransform-Classes>
 				            	<Can-Set-Native-Method-Prefix>true</Can-Set-Native-Method-Prefix>				    

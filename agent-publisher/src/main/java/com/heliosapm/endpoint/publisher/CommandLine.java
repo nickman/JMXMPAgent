@@ -19,6 +19,9 @@ under the License.
  */
 package com.heliosapm.endpoint.publisher;
 
+import java.io.StringWriter;
+import java.util.Arrays;
+
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -27,7 +30,7 @@ import org.kohsuke.args4j.Option;
 /**
  * <p>Title: CommandLine</p>
  * <p>Description: Command line processor for publisher agent</p> 
- * @author Whitehead (nwhitehead AT heliosdev DOT org)
+ * @author Whitehead (nwhitehead AT heliosdev DOT org) 
  * <p><code>com.heliosapm.endpoint.publisher.CommandLine</code></p>
  */
 
@@ -64,8 +67,49 @@ public class CommandLine {
 	public CommandLine() {		
 	}
 	
+	/**
+	 * Creates a CommandLine from the passed arguments
+	 * @param args The arguments to parse
+	 * @return the parsed CommandLine instance
+	 */
+	public static CommandLine parse(final String[] args) {
+		SimpleLogger.log("Agent Arguments: %s", Arrays.toString(args));
+		CommandLine cl = new CommandLine();
+		CmdLineParser parser = new CmdLineParser(cl);
+	   	try {
+    		parser.parseArgument(args);
+    		return cl;
+        } catch (CmdLineException e) {
+            final StringBuilder b = new StringBuilder(e.getMessage()).append("\n");
+            final StringWriter sw = new StringWriter();            
+            parser.printUsage(sw, null);
+            sw.flush();
+            b.append(sw.toString());
+            throw new RuntimeException(b.toString());
+        }		 		
+	}
+	
+	/**
+	 * Creates a CommandLine from the passed string
+	 * @param agentArgs The string to parse
+	 * @return the parsed CommandLine instance
+	 */
+	public static CommandLine parse(final String agentArg) {
+		return parse(agentArg.split("\\s+"));
+	}
+	
 	public static void main(String[] args) {
-		log("Testing CmdLine");
+		SimpleLogger.log("Testing CmdLine");
+		final String agentArg = "install " +
+				"--specs " +  
+				"foo,bar,jvm,kafka:8192:0.0.0.0:DefaultDomain;jdatasources,tomcat:8193:0.0.0.0:jboss " + 
+				"--host " +
+				"appServer5 " + 
+				"--app " + 
+				"stream-boy     " + 
+				"--zk " + 
+				"localhost:2181,localhost:2182";
+
 		final String[] xargs = {
 			"install",
 			"--specs",
@@ -73,29 +117,19 @@ public class CommandLine {
 			"--host",
 			"appServer5",
 			"--app",
-			"stream-boy"
-//			"--zk",
-//			"localhost:2181,localhost:2182"
+			"stream-boy",
+			"--zk",
+			"localhost:2181,localhost:2182"
 		};
-		CommandLine cl = new CommandLine();
-		CmdLineParser parser = new CmdLineParser(cl);
-	   	try {
-    		parser.parseArgument(xargs);
-//	   		parser.parseArgument();
-//	   		if(cl.specs.length==0) {
-//	   			throw new CmdLineException(parser, new Exception("No JMXMP Specs Configured"));
-//	   		}
-    		log("Config:" + cl);
-        } catch (CmdLineException e) {
-            // handling of wrong arguments
-            System.err.println(e.getMessage());
-            parser.printUsage(System.err);
-        }		 
+		
+		try {
+			CommandLine cl = CommandLine.parse(agentArg);
+			SimpleLogger.log(cl.toString());
+		} catch (Exception ex) {
+			SimpleLogger.elog(ex.getMessage());
+		}
 	}
 	
-	public static void log(Object msg) {
-		System.out.println(msg);
-	}
 
 	/**
 	 * Sets the JMXMPSpecs

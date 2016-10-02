@@ -416,11 +416,13 @@ public class AgentName  extends NotificationBroadcasterSupport  implements Agent
 			initBufferized();
 			System.setProperty(PROP_APP_NAME, appName);
 			GLOBAL_TAGS.put(APP_TAG, appName);
+			appNameSource = "AppNameReset";			
 			log.info("AppName reset: app:[{}]", newAppName);
 			fireAgentNameChange(newAppName, null);
 		}
-
 	}
+	
+	
 	
 	/**
 	 * {@inheritDoc}
@@ -433,6 +435,7 @@ public class AgentName  extends NotificationBroadcasterSupport  implements Agent
 			initBufferized();
 			System.setProperty(PROP_HOST_NAME, hostName);
 			GLOBAL_TAGS.put(HOST_TAG, hostName);
+			hostNameSource = "HostNameReset";
 			log.info("HostName reset: host:[{}]", newHostName);
 			fireAgentNameChange(null, newHostName);
 		}

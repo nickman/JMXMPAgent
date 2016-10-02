@@ -1,28 +1,26 @@
 /**
- * Helios, OpenSource Monitoring
- * Brought to you by the Helios Development Group
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- * 
- *  http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
-package com.heliosapm.jmxmp;
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+ */
+package com.heliosapm.endpoint.publisher;
+
+import java.io.File;
 import java.lang.instrument.Instrumentation;
+import java.lang.management.ManagementFactory;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
@@ -36,42 +34,44 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.heliosapm.jmxmp.JMXMPConnector;
 import com.heliosapm.jmxmp.spec.SpecField;
-import com.heliosapm.jmxmp.spec.SpecParser;
+
 
 /**
  * <p>Title: Agent</p>
- * <p>Description: </p> 
+ * <p>Description: The JMXMP and Endpoint publisher agent</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.jmxmp.Agent</code></p>
- */
-
-/*
- * Seeing this issue with ElasticSearch
-java.security.AccessControlException: access denied ("javax.management.MBeanServerPermission" "createMBeanServer")
-	at java.security.AccessControlContext.checkPermission(AccessControlContext.java:472)
-	at java.security.AccessController.checkPermission(AccessController.java:884)
-	at java.lang.SecurityManager.checkPermission(SecurityManager.java:549)
-	at java.lang.management.ManagementFactory.getPlatformMBeanServer(ManagementFactory.java:465)
-	at com.heliosapm.jmxmp.JMXMPConnector.getMBeanServer(JMXMPConnector.java:87)
-	at com.heliosapm.jmxmp.Agent.premain(Agent.java:73)
-	at com.heliosapm.jmxmp.Agent.agentmain(Agent.java:100)
-	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-	at java.lang.reflect.Method.invoke(Method.java:498)
-	at sun.instrument.InstrumentationImpl.loadClassAndStartAgent(InstrumentationImpl.java:386)
-	at sun.instrument.InstrumentationImpl.loadClassAndCallAgentmain(InstrumentationImpl.java:411)
-
+ * <p><code>com.heliosapm.endpoint.publisher.Agent</code></p>
  */
 
 public class Agent {
-
 	/** The agent provided instrumentation */
 	public static Instrumentation INSTRUMENTATION = null;
 	/** Static class logger */
 	protected static final Logger log = Logger.getLogger(Agent.class.getName());
+	/** This JVM's PID */
+	public static final long PID;
+	/** The log file for agent operations */
+	public static final File agentLogFile;
+	
+	static {
+		final long[] pid = new long[1];
+		final File[] logFile = new File[1]; 
+		AccessController.doPrivileged(new PrivilegedAction<Void>() {
+			@Override
+			public Void run() {
+				pid[0] = Long.parseLong(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+				logFile[0] = new File(new File(System.getProperty("java.io.tmpdir")), "agentlogfile-" + PID + ".log");
+				logFile[0].deleteOnExit();
+				return null;
+			}
+		});
+		PID = pid[0];
+		agentLogFile = logFile[0];
+		SimpleLogger.agentLogFile = agentLogFile;
+	}
 	
 	
 	/** Keep a reference to created connectors keyed by the listening port */
@@ -85,30 +85,10 @@ public class Agent {
 	 * @param inst The agent instrumentation
 	 */
 	public static void premain(final String agentArgs, final Instrumentation inst) {
-		INSTRUMENTATION = inst;
+		if(INSTRUMENTATION==null) INSTRUMENTATION = inst;
 		try {			
-			AccessController.doPrivileged(new PrivilegedAction<Void>() {
-				@Override
-				public Void run() {
-					try {
-						final Map<Integer, Map<SpecField, String>> parsedSpecs = SpecParser.parseSpecs(agentArgs);
-						for(Map.Entry<Integer, Map<SpecField, String>> entry: parsedSpecs.entrySet()) {
-							final Map<SpecField, String> spec = entry.getValue();
-							final String domain = spec.get(SpecField.DOMAIN);
-							if(JMXMPConnector.getMBeanServer(domain) != null) {
-								JMXMPConnector connector = new JMXMPConnector(spec);								
-								connector.start();
-								connectors.put(entry.getKey(), connector);
-							} else {
-								schedule(spec);
-							}
-						}	
-					} catch (Exception ex) {
-						ex.printStackTrace(System.err);
-					}
-					return null;
-				}
-			});
+			final CommandLine cl = CommandLine.parse(agentArgs);
+			cl.getCommand().processCommand(cl);
 		} catch (Throwable ex) {
 			ex.printStackTrace(System.err);
 		}
@@ -185,5 +165,5 @@ public class Agent {
 	}
 	
 	private Agent() {}
-	
+
 }
