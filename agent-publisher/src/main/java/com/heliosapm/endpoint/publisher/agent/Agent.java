@@ -16,7 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.agent;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.heliosapm.endpoint.publisher.SimpleLogger;
+import com.heliosapm.endpoint.publisher.cl.CommandLine;
 import com.heliosapm.jmxmp.JMXMPConnector;
 import com.heliosapm.jmxmp.spec.SpecField;
 
@@ -43,7 +45,7 @@ import com.heliosapm.jmxmp.spec.SpecField;
  * <p>Description: The JMXMP and Endpoint publisher agent</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.Agent</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.agent.Agent</code></p>
  */
 
 public class Agent {
@@ -64,13 +66,14 @@ public class Agent {
 			public Void run() {
 				pid[0] = Long.parseLong(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 				logFile[0] = new File(new File(System.getProperty("java.io.tmpdir")), "agentlogfile-" + PID + ".log");
-				logFile[0].deleteOnExit();
+				logFile[0].delete();
+				//logFile[0].deleteOnExit();
 				return null;
 			}
 		});
 		PID = pid[0];
 		agentLogFile = logFile[0];
-		SimpleLogger.agentLogFile = agentLogFile;
+		SimpleLogger.setAgentLogFile(agentLogFile);
 	}
 	
 	

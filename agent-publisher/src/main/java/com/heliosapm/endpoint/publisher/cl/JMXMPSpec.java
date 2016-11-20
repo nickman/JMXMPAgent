@@ -16,20 +16,20 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.cl;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.heliosapm.endpoint.publisher.endpoint.Endpoint;
 import com.heliosapm.utils.lang.StringHelper;
 
 /**
  * <p>Title: JMXMPSpec</p>
  * <p>Description: Definition for a JMXMP Connection Server installation and the advertised endpoints accessible therein</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.JMXMPSpec</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.cl.JMXMPSpec</code></p>
  */
 
 public class JMXMPSpec {
@@ -44,7 +44,7 @@ public class JMXMPSpec {
 	/** The default JMXMP listening port */
 	public static final int DEFAULT_PORT = 1818;
 	/** The default advertised endpoints */
-	public static final String[] DEFAULT_ENDPOINTS = {};
+	public static final Endpoint[] DEFAULT_ENDPOINTS = {};
 	
 	/** The configured bind interface */
 	protected String bindInterface = DEFAULT_BIND;
@@ -53,7 +53,7 @@ public class JMXMPSpec {
 	/** The configured JMXMP listening port */
 	protected int port = DEFAULT_PORT;
 	/** The configured endpoints */
-	protected String[] endpoints = DEFAULT_ENDPOINTS;
+	protected Endpoint[] endpoints = DEFAULT_ENDPOINTS;
 	
 	/**
 	 * Creates a new JMXMPSpec
@@ -158,7 +158,7 @@ public class JMXMPSpec {
 	 * Returns the advertised endpoints
 	 * @return the advertised endpoints
 	 */
-	public String[] getEndpoints() {
+	public Endpoint[] getEndpoints() {
 		return endpoints.clone();
 	}
 	
@@ -167,13 +167,9 @@ public class JMXMPSpec {
 	 * @param endpoints the endpoints to set
 	 */
 	protected void setEndpoints(final String...endpoints) {
-		final Set<String> eps = new LinkedHashSet<String>();
-		for(String ep: endpoints) {
-			if(ep==null || ep.trim().isEmpty()) continue;
-			eps.add(ep.trim());
-		}
-		if(eps.isEmpty()) System.err.println("[JMXMPSpec] WARNING: No endpoints defined");
-		this.endpoints = eps.toArray(new String[eps.size()]);
+		
+		this.endpoints = Endpoint.fromStrings(endpoints);
+		if(this.endpoints.length==0) System.err.println("[JMXMPSpec] WARNING: No endpoints defined");
 	}
 
 	/**

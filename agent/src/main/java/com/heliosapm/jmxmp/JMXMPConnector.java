@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
@@ -115,6 +116,13 @@ public class JMXMPConnector implements Closeable {
 			jmxUrl = new JMXServiceURL(String.format(JMX_URL, bindAddress, port));
 			connectorServer = JMXConnectorServerFactory.newJMXConnectorServer(jmxUrl, null, server);
 			log.info("Created JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]");
+			try {
+				final ObjectName on = JMXHelper.objectName("javax.management.remote.jmxmp:service=JMXMPConnectorServer,port=" + port);
+				JMXHelper.registerMBean(connectorServer, on);				
+			} catch (Exception ex) {
+				log.log(Level.WARNING, "Failed to register MBean for JMXMP Connector [" + jmxUrl + "]:" + ex);
+			}
+			
 		} catch (Exception ex) {
 			log.log(Level.SEVERE, "Failed to create JMXMPServer on [" + bindAddress + ":" + port + "] for MBeanServer [" + domain + "]", ex);
 			throw ex;

@@ -16,20 +16,26 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.service;
+
+import com.heliosapm.endpoint.publisher.endpoint.AdvertisedEndpoint;
 
 /**
- * <p>Title: AgentNameChangeListener</p>
- * <p>Description: Defines a listener that is notified when there are changes to the agent name</p> 
+ * <p>Title: AdvertisedEndpointListener</p>
+ * <p>Description: Defines a listener to be notified of new onlined AdvertisedEndpoints and disappeared offlined AdvertisedEndpoints</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.AgentNameChangeListener</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.AdvertisedEndpointListener</code></p>
  */
 
-public interface AgentNameChangeListener {
+public interface AdvertisedEndpointListener {
 	/**
-	 * Callback when the host or app changes name
-	 * @param app The new app name, or null if only the host changed
-	 * @param host The new host name, or null if only the app changed
+	 * Fired when an AdvertisedEndpoint comes on line
+	 * @param endpoint the online AdvertisedEndpoint
 	 */
-	public void onAgentNameChange(String app, String host);
+	public void onOnlineAdvertisedEndpoint(final AdvertisedEndpoint endpoint);
+	/**
+	 * Fired when an AdvertisedEndpoint goes off line
+	 * @param endpoint the offline AdvertisedEndpoint
+	 */
+	public void onOfflineAdvertisedEndpoint(final AdvertisedEndpoint endpoint);
 }

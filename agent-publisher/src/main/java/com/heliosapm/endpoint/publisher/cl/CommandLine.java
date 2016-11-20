@@ -17,7 +17,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.cl;
 
 import java.io.StringWriter;
 import java.util.Arrays;
@@ -26,6 +26,9 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+
+import com.heliosapm.endpoint.publisher.SimpleLogger;
+import com.heliosapm.endpoint.publisher.agent.AgentCommand;
 
 /**
  * <p>Title: CommandLine</p>

@@ -16,14 +16,22 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.endpoint;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.heliosapm.endpoint.publisher.agent.AgentName;
 import com.heliosapm.utils.jmx.JMXHelper;
 
 /**
@@ -44,7 +52,7 @@ public class AdvertisedEndpoint {
 	protected String jmxUrl;
 	/** The published endpoints indicating to monitors what the categories of data collection available are */
 	@JsonProperty("endpoints")
-	protected String[] endPoints;
+	protected Set<Endpoint> endPoints = new LinkedHashSet<Endpoint>();
 	/** The app name */
 	@JsonProperty("app")
 	protected String app;
@@ -72,30 +80,47 @@ public class AdvertisedEndpoint {
 	 * @param host The public host name
 	 * @param endPoints The monitorable endpoints
 	 */
-	public AdvertisedEndpoint(final String jmxUrl, final String app, final String host, final String...endPoints) {
+	public AdvertisedEndpoint(final String jmxUrl, final String app, final String host, final Endpoint...endPoints) {
 		if(jmxUrl==null || jmxUrl.trim().isEmpty()) throw new IllegalArgumentException("The passed JMX URL was null or empty");
 		if(app==null || app.trim().isEmpty()) throw new IllegalArgumentException("The passed App Name was null or empty");
 		if(host==null || host.trim().isEmpty()) throw new IllegalArgumentException("The passed public Host Name was null or empty");
-		if(endPoints==null || endPoints.length==0) throw new IllegalArgumentException("The passed endpoints were empty");
-		for(int i = 0; i < endPoints.length; i++) {
-			if(endPoints[i]==null || endPoints[i].trim().isEmpty()) throw new IllegalArgumentException("The endpoint [" + i + "] was null or empty");
-			endPoints[i] = endPoints[i].trim();
-		}
 		this.jmxUrl = jmxUrl.trim();
 		this.app = app.trim();
 		this.host = host.trim();
-		this.endPoints = endPoints;
+		Collections.addAll(this.endPoints, endPoints);
 		this.port = JMXHelper.serviceUrl(this.jmxUrl).getPort();
 	}
+	
+	/**
+	 * Creates a new AdvertisedEndpoint
+	 * @param jmxUrl The accessible JMX URL
+	 * @param app The application name
+	 * @param host The public host name
+	 * @param endPoints The monitorable endpoints
+	 */
+	public AdvertisedEndpoint(final String jmxUrl, final String app, final String host, final String...endPoints) {
+		this(jmxUrl, app, host, Endpoint.fromStrings(endPoints));
+	}
+	
 
 	/**
 	 * Creates a new AdvertisedEndpoint using the {@link AgentName} to get the app and host name
 	 * @param jmxUrl The accessible JMX URL
 	 * @param endPoints The monitorable endpoints
 	 */
-	public AdvertisedEndpoint(final CharSequence jmxUrl, final String...endPoints) {
+	public AdvertisedEndpoint(final CharSequence jmxUrl, final Endpoint...endPoints) {
 		this(jmxUrl.toString(), AgentName.getInstance().getAppName(), AgentName.getInstance().getHostName(), endPoints);
 	}
+	
+	/**
+	 * Creates a new AdvertisedEndpoint using the {@link AgentName} to get the app and host name
+	 * @param jmxUrl The accessible JMX URL
+	 * @param endPoints The monitorable endpoints
+	 */
+	public AdvertisedEndpoint(final CharSequence jmxUrl, final String...endPoints) {
+		this(jmxUrl, Endpoint.fromStrings(endPoints));
+	}
+	
 	
 	
 	/**
@@ -143,6 +168,23 @@ public class AdvertisedEndpoint {
 	}
 	
 	/**
+	 * Parses the passed bytes into an AdvertisedEndpoint
+	 * @param data The json bytes 
+	 * @return the built AdvertisedEndpoint
+	 */
+	public static AdvertisedEndpoint fromBytes(final byte[] data) {
+		if (data == null)
+			throw new IllegalArgumentException("Data was null");
+		//return return jsonMapper.readValue(json, pojo);
+		try {
+			return jsonMapper.readValue(data, AdvertisedEndpoint.class);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		
+	}
+	
+	/**
 	 * Returns this endpoints unique id
 	 * @return this endpoints unique id
 	 */
@@ -174,8 +216,8 @@ public class AdvertisedEndpoint {
 	 * Returns the advertised monitoring endpoints
 	 * @return the advertised monitoring endpoints
 	 */
-	public String[] getEndPoints() {
-		return endPoints.clone();
+	public Endpoint[] getEndpoints() {
+		return endPoints.toArray(new Endpoint[endPoints.size()]);
 	}
 
 	/**
@@ -204,7 +246,7 @@ public class AdvertisedEndpoint {
 		builder.append("AdvertisedEndpoint [jmxUrl=");
 		builder.append(jmxUrl);
 		builder.append(", endPoints=");
-		builder.append(Arrays.toString(endPoints));
+		builder.append(endPoints);
 		builder.append(", app=");
 		builder.append(app);
 		builder.append(", host=");
@@ -213,24 +255,22 @@ public class AdvertisedEndpoint {
 		return builder.toString();
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#hashCode()
-	 */
+
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((app == null) ? 0 : app.hashCode());
+		result = prime * result + ((endPoints == null) ? 0 : endPoints.hashCode());
 		result = prime * result + ((host == null) ? 0 : host.hashCode());
 		result = prime * result + ((jmxUrl == null) ? 0 : jmxUrl.hashCode());
+		result = prime * result + port;
 		return result;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
+
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -245,6 +285,11 @@ public class AdvertisedEndpoint {
 				return false;
 		} else if (!app.equals(other.app))
 			return false;
+		if (endPoints == null) {
+			if (other.endPoints != null)
+				return false;
+		} else if (!endPoints.equals(other.endPoints))
+			return false;
 		if (host == null) {
 			if (other.host != null)
 				return false;
@@ -255,10 +300,13 @@ public class AdvertisedEndpoint {
 				return false;
 		} else if (!jmxUrl.equals(other.jmxUrl))
 			return false;
+		if (port != other.port)
+			return false;
 		return true;
 	}
 
 	
+
 	
 
 }

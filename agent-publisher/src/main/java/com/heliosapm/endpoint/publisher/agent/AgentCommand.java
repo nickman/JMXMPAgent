@@ -16,7 +16,11 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.agent;
+
+import com.heliosapm.endpoint.publisher.cl.CommandLine;
+import com.heliosapm.endpoint.publisher.cl.InstallCommandProcessor;
+import com.heliosapm.endpoint.publisher.cl.ListCommandProcessor;
 
 /**
  * <p>Title: AgentCommand</p>
@@ -28,6 +32,9 @@ package com.heliosapm.endpoint.publisher;
 public enum AgentCommand implements AgentCommandProcessor {
 	/** List JVMs */
 	LIST(new ListCommandProcessor()),
+	/** List JVMs and configurations of JVMs with the JMXMP agent installed */
+	ILIST(new ListCommandProcessor()),
+	
 	/** Install the agent into a JVM */
 	INSTALL(new InstallCommandProcessor());
 	
@@ -39,7 +46,7 @@ public enum AgentCommand implements AgentCommandProcessor {
 
 	/**
 	 * {@inheritDoc}
-	 * @see com.heliosapm.endpoint.publisher.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.CommandLine)
+	 * @see com.heliosapm.endpoint.publisher.agent.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.cl.CommandLine)
 	 */
 	@Override
 	public String processCommand(final CommandLine cmdLine) {

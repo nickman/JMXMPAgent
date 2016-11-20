@@ -16,11 +16,10 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.cl;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Properties;
 import java.util.Set;
 
 import javax.management.MBeanServer;
@@ -29,6 +28,10 @@ import javax.management.remote.jmxmp.JMXMPConnectorServer;
 
 import org.cliffc.high_scale_lib.NonBlockingHashSet;
 
+import com.heliosapm.endpoint.publisher.SimpleLogger;
+import com.heliosapm.endpoint.publisher.agent.AbstractAgentCommandProcessor;
+import com.heliosapm.endpoint.publisher.agent.AgentName;
+import com.heliosapm.endpoint.publisher.endpoint.Endpoint;
 import com.heliosapm.jmxmp.JMXMPConnector;
 import com.heliosapm.shorthand.attach.vm.VirtualMachine;
 import com.heliosapm.utils.jmx.JMXHelper;
@@ -37,7 +40,7 @@ import com.heliosapm.utils.jmx.JMXHelper;
  * <p>Title: InstallCommandProcessor</p>
  * <p>Description: Command processor to install the endpoint publisher and JMXMP Connector Server</p> 
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.InstallCommandProcessor</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.cl.InstallCommandProcessor</code></p>
  */
 
 public class InstallCommandProcessor extends AbstractAgentCommandProcessor {
@@ -77,7 +80,7 @@ public class InstallCommandProcessor extends AbstractAgentCommandProcessor {
 
 	/**
 	 * {@inheritDoc}
-	 * @see com.heliosapm.endpoint.publisher.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.CommandLine)
+	 * @see com.heliosapm.endpoint.publisher.agent.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.cl.CommandLine)
 	 */
 	@Override
 	public String processCommand(final CommandLine cmdLine) {
@@ -95,7 +98,7 @@ public class InstallCommandProcessor extends AbstractAgentCommandProcessor {
 			vm = VirtualMachine.attach("" + cmdLine.getPid());
 			for(final JMXMPSpec spec: cmdLine.getJMXMPSpecs()) {
 				try {
-					final String[] endpoints = spec.getEndpoints();
+					final Endpoint[] endpoints = spec.getEndpoints();
 					final String bind = spec.getBindInterface();
 					final int port = spec.getPort();
 					final String svc = String.format(JMXMP_URL_FORMAT, bind, port);

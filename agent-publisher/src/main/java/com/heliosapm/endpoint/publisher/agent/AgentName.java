@@ -16,7 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.agent;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -308,7 +308,7 @@ public class AgentName  extends NotificationBroadcasterSupport  implements Agent
 	
 	/**
 	 * {@inheritDoc}
-	 * @see com.heliosapm.streams.common.naming.AgentNameMBean#getAppNameSource()
+	 * @see com.heliosapm.endpoint.publisher.agent.streams.common.naming.AgentNameMBean#getAppNameSource()
 	 */
 	@Override
 	public String getAppNameSource() {		
@@ -317,7 +317,7 @@ public class AgentName  extends NotificationBroadcasterSupport  implements Agent
 	
 	/**
 	 * {@inheritDoc}
-	 * @see com.heliosapm.streams.common.naming.AgentNameMBean#getHostNameSource()
+	 * @see com.heliosapm.endpoint.publisher.agent.streams.common.naming.AgentNameMBean#getHostNameSource()
 	 */
 	@Override
 	public String getHostNameSource() {
@@ -407,7 +407,7 @@ public class AgentName  extends NotificationBroadcasterSupport  implements Agent
 	
 	/**
 	 * {@inheritDoc}
-	 * @see com.heliosapm.streams.common.naming.AgentNameMBean#resetAppName(java.lang.String)
+	 * @see com.heliosapm.endpoint.publisher.agent.streams.common.naming.AgentNameMBean#resetAppName(java.lang.String)
 	 */
 	@Override
 	public void resetAppName(final String newAppName) {
@@ -426,7 +426,7 @@ public class AgentName  extends NotificationBroadcasterSupport  implements Agent
 	
 	/**
 	 * {@inheritDoc}
-	 * @see com.heliosapm.streams.common.naming.AgentNameMBean#resetHostName(java.lang.String)
+	 * @see com.heliosapm.endpoint.publisher.agent.streams.common.naming.AgentNameMBean#resetHostName(java.lang.String)
 	 */
 	@Override
 	public void resetHostName(final String newHostName) {

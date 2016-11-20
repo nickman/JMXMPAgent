@@ -16,7 +16,9 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.cl;
+
+import com.heliosapm.endpoint.publisher.agent.AgentCommandProcessor;
 
 /**
  * <p>Title: ListCommandProcessor</p>
@@ -29,7 +31,7 @@ public class ListCommandProcessor implements AgentCommandProcessor {
 
 	/**
 	 * {@inheritDoc}
-	 * @see com.heliosapm.endpoint.publisher.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.CommandLine)
+	 * @see com.heliosapm.endpoint.publisher.agent.AgentCommandProcessor#processCommand(com.heliosapm.endpoint.publisher.cl.CommandLine)
 	 */
 	@Override
 	public String processCommand(final CommandLine cmdLine) {

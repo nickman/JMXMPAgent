@@ -16,7 +16,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.agent;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +29,8 @@ import java.util.Set;
 import org.cliffc.high_scale_lib.NonBlockingHashMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.heliosapm.endpoint.publisher.endpoint.Endpoint;
+import com.heliosapm.endpoint.publisher.service.EndpointPublisher;
 import com.heliosapm.utils.jmx.JMXHelper;
 
 /**
@@ -41,9 +43,9 @@ import com.heliosapm.utils.jmx.JMXHelper;
 
 public abstract class AbstractAgentCommandProcessor implements AgentCommandProcessor {
 	/** A map of advertised endpoints keyed by the JMX Url the endpoints are accessed by */
-	protected static final NonBlockingHashMap<String, String[]> endpoints = new NonBlockingHashMap<String, String[]>();
+	protected static final NonBlockingHashMap<String, Endpoint[]> endpoints = new NonBlockingHashMap<String, Endpoint[]>();
 	/** Placeholder for endpoints update */
-	private static final String[] PLACEHOLDER = {"placeholder"};
+	private static final Endpoint[] PLACEHOLDER = {Endpoint.fromString(AbstractAgentCommandProcessor.class.getName())};
 	/** Shared ObjectMapper instance */
 	private static final ObjectMapper jsonMapper = new ObjectMapper();
 	
@@ -70,7 +72,7 @@ public abstract class AbstractAgentCommandProcessor implements AgentCommandProce
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
-		for(Map.Entry<String, String[]> entry: endpoints.entrySet()) {
+		for(Map.Entry<String, Endpoint[]> entry: endpoints.entrySet()) {
 			EndpointPublisher.getInstance().register(entry.getKey(), entry.getValue());
 		}
 	}
@@ -87,8 +89,8 @@ public abstract class AbstractAgentCommandProcessor implements AgentCommandProce
 	 * Returns a map of installed endpoints keyed by the JMXMP connector URL
 	 * @return a map of installed endpoints keyed by the JMXMP connector URL
 	 */
-	protected static Map<String, String[]> getEndpoints() {
-		return new HashMap<String, String[]>(endpoints);
+	protected static Map<String, Endpoint[]> getEndpoints() {
+		return new HashMap<String, Endpoint[]>(endpoints);
 	}
 	
 	
@@ -97,18 +99,18 @@ public abstract class AbstractAgentCommandProcessor implements AgentCommandProce
 	 * @param jmxUrl The JMX url through which access to the endpoints is enabled 
 	 * @param endpointNames The advertised endpoint names
 	 */
-	protected static void addEndpoints(final String jmxUrl, final String...endpointNames) {
+	protected static void addEndpoints(final String jmxUrl, final Endpoint...epoints) {
 		if(jmxUrl==null || jmxUrl.trim().isEmpty()) throw new IllegalArgumentException("The passed JMX URL was null or empty");
 		final String key = jmxUrl.trim();
-		if(endpoints==null || endpointNames.length==0) return;
-		String[] endps = endpoints.putIfAbsent(key, endpointNames);
+		if(endpoints==null || epoints.length==0) return;
+		Endpoint[] endps = endpoints.putIfAbsent(key, PLACEHOLDER);
 		if(endps!=null) {
 			if(PLACEHOLDER==endps) {
-				endpoints.replace(key, endpointNames);
+				endpoints.replace(key, epoints);
 			} else {
-				final Set<String> joined = new LinkedHashSet<String>(Arrays.asList(endps));
-				Collections.addAll(joined, endpointNames);
-				endpoints.replace(key, joined.toArray(new String[joined.size()]));				
+				final Set<Endpoint> joined = new LinkedHashSet<Endpoint>(Arrays.asList(endps));
+				Collections.addAll(joined, epoints);
+				endpoints.replace(key, joined.toArray(new Endpoint[joined.size()]));				
 			}
 			updateJMXMPSystemProps();
 		}

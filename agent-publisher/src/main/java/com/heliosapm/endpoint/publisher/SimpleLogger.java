@@ -34,7 +34,7 @@ import java.io.PrintWriter;
 public class SimpleLogger {
 	
 	/** Agent log file */
-	static volatile File agentLogFile = null;
+	private static volatile File agentLogFile = null;
 
 	/**
 	 * Low maintenance formatted out logger
@@ -108,6 +108,22 @@ public class SimpleLogger {
 	 */
 	public static void elog(final Object fmt, final Object...args) {
 		elog(fmt, null, args);
+	}
+
+	/**
+	 * Returns the agent's log file
+	 * @return the agent's log file
+	 */
+	public static File getAgentLogFile() {
+		return agentLogFile;
+	}
+
+	/**
+	 * Sets the agent's log file
+	 * @param agentLogFile the agent's log file
+	 */
+	public static void setAgentLogFile(final File agentLogFile) {
+		SimpleLogger.agentLogFile = agentLogFile;
 	}
 
 }

@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.heliosapm.endpoint.publisher;
+package com.heliosapm.endpoint.publisher.service;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,10 +38,17 @@ import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooKeeper;
+import org.cliffc.high_scale_lib.NonBlockingHashSet;
 import org.json.JSONException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.heliosapm.endpoint.publisher.SimpleLogger;
+import com.heliosapm.endpoint.publisher.agent.AgentName;
+import com.heliosapm.endpoint.publisher.endpoint.AdvertisedEndpoint;
+import com.heliosapm.endpoint.publisher.endpoint.Endpoint;
+import com.heliosapm.utils.concurrency.CompletionFuture;
 import com.heliosapm.utils.config.ConfigurationHelper;
+import com.heliosapm.utils.enums.TimeUnitSymbol;
 import com.heliosapm.utils.io.CloseableService;
 import com.heliosapm.utils.io.StdInCommandHandler;
 
@@ -48,7 +57,7 @@ import com.heliosapm.utils.io.StdInCommandHandler;
  * <p>Description: Publishes a JMX monitoring discovery endpoint to zookeeper</p> 
  * <p>Company: Helios Development Group LLC</p>
  * @author Whitehead (nwhitehead AT heliosdev DOT org)
- * <p><code>com.heliosapm.endpoint.publisher.EndpointPublisher</code></p>
+ * <p><code>com.heliosapm.endpoint.publisher.service.EndpointPublisher</code></p>
  */
 
 public class EndpointPublisher implements ConnectionStateListener, Closeable {
@@ -110,12 +119,19 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 			return t;
 		}
 	};
+	
 	/** The service cache callback executor */
 	protected final ExecutorService executor = Executors.newCachedThreadPool(threadFactory);
 	
+	/** A set of latches to drop when the client connects */
+	protected final Set<CountDownLatch> connectLatches =  new NonBlockingHashSet<CountDownLatch>(); 
+	
 	
 	/** A set of unregistered endpoints */
-	protected final ConcurrentHashMap<String, AdvertisedEndpoint> unregistered = new ConcurrentHashMap<String, AdvertisedEndpoint>(); 
+	protected final ConcurrentHashMap<String, AdvertisedEndpoint> unregistered = new ConcurrentHashMap<String, AdvertisedEndpoint>();
+	/** A set of unregistered endpoints */
+	protected final ConcurrentHashMap<AdvertisedEndpoint, CompletionFuture> registrationFutures = new ConcurrentHashMap<AdvertisedEndpoint, CompletionFuture>(); 
+	
 	/** A set of registered endpoints */
 	protected final ConcurrentHashMap<String, AdvertisedEndpoint> registered = new ConcurrentHashMap<String, AdvertisedEndpoint>(); 
 	/** A set of registered AdvertisedEndpoint event listeners */
@@ -173,10 +189,13 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 	 * @throws IOException won't be thrown, but required
 	 */
 	public void close() throws IOException {
-		intendToClose.set(true);		
-		try { curator.close(); } catch (Exception x) {/* No Op */}
-		unregistered.clear();
-		registered.clear();				
+		synchronized(lock) {
+			intendToClose.set(true);		
+			try { curator.close(); } catch (Exception x) {/* No Op */}
+			unregistered.clear();
+			registered.clear();	
+			instance = null;
+		}
 	}
 	
 	/**
@@ -186,7 +205,6 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 	public synchronized EndpointPublisher reset() {
 		if(!intendToClose.get()) {
 			try { close(); } catch (Exception x) {/* No Op */}
-			instance = null;
 		}
 		return getInstance();
 	}
@@ -200,8 +218,9 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 		SimpleLogger.log("ZK Connection State Change to [%s]", newState.name());
 		connected.set(newState.isConnected());
 		switch(newState) {			
-			case CONNECTED:							
+			case CONNECTED:						
 				registerPending();
+				dropConnectLatches();
 				break;
 			case LOST:
 				setAllPending();
@@ -210,13 +229,22 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 				break;
 			case RECONNECTED:
 				registerPending();
+				dropConnectLatches();
 				break;
 			case SUSPENDED:
 				break;
 			default:
 				break;
+		}
 		
-		}		
+	}		
+
+	/**
+	 * Drops and clears all connected latches
+	 */
+	protected void dropConnectLatches() {
+		for(final CountDownLatch latch : connectLatches) { latch.countDown(); }
+		connectLatches.clear();			
 	}
 
 	
@@ -225,8 +253,10 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 	 * If registration fails or the client is disconnected, will retry on connection resumption.
 	 * @param endpoint The endpoint to register
 	 */
-	public void register(final AdvertisedEndpoint endpoint) {
+	public CompletionFuture register(final AdvertisedEndpoint endpoint) {
 		if(endpoint==null) throw new IllegalArgumentException("The passed endpoint was null");
+		final CompletionFuture existing = registrationFutures.get(endpoint);
+		final CompletionFuture future = existing==null ? new CompletionFuture(1) : existing;
 		unregistered.put(endpoint.getId(), endpoint);
 		if(connected.get()) {
 			try {
@@ -242,7 +272,8 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 								SimpleLogger.log("Register callback. rc:%s, path:[%s], ctx:[%s], name:[%s]", event.getResultCode(), event.getPath(), event.getContext(), event.getName());
 								if(event.getResultCode() >= 0) {									
 									registered.put(endpoint.getId(), endpoint);
-									unregistered.remove(endpoint.getId());																
+									unregistered.remove(endpoint.getId());
+									future.complete();
 								}
 							}
 						}, executor).forPath(zkPath, endpoint.toByteArray());
@@ -253,7 +284,10 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 			} catch (Exception ex) {
 				SimpleLogger.elog("Failed to register endpoint [%s]",  ex, endpoint);
 			}
+		} else {
+			if(existing==null) registrationFutures.put(endpoint, future);
 		}
+		return future;
 	}
 	
 	/**
@@ -262,7 +296,7 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 	 * @param jmxUrl The advertised JMXMP URL
 	 * @param endPoints The advertised monitoring categories
 	 */
-	public void register(final String jmxUrl, final String...endPoints) {
+	public void register(final String jmxUrl, final Endpoint...endPoints) {
 		final String app = AgentName.getInstance().getAppName();
 		final String host = AgentName.getInstance().getHostName();
 		final AdvertisedEndpoint ae = new AdvertisedEndpoint(jmxUrl, app, host, endPoints);
@@ -315,12 +349,53 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 
 
 	/**
-	 * Returns 
-	 * @return the connected
+	 * Indicates if the publisher is connected
+	 * @return true if connected, false otherwise
 	 */
-	public AtomicBoolean getConnected() {
-		return connected;
+	public boolean isConnected() {
+		return connected.get();
 	}
+	
+	/**
+	 * Waits for the publisher to connect and returns.
+	 * Returns immediately if already connected.
+	 * @param timeout The wait timeout
+	 * @param unit The timeout unit
+	 */
+	public void waitForConnect(final long timeout, final TimeUnit unit) {
+		if(timeout < 1L) throw new IllegalArgumentException("Invalid timeout value:" + timeout);
+		if(unit==null) throw new IllegalArgumentException("The passed unit was null");
+		if(!connected.get()) {
+			final CountDownLatch latch = new CountDownLatch(1);
+			connectLatches.add(latch);
+			try {
+				if(connected.get()) {
+					latch.countDown();
+					connectLatches.remove(latch);
+				} else {
+					try {
+						if(latch.await(timeout, unit)) return;
+						throw new RuntimeException("Timed out after [" + timeout + TimeUnitSymbol.symbol(unit) + "] waiting for publisher to connect");
+					} catch (InterruptedException iex) {
+						throw new RuntimeException("Thread was interrupted while waiting on connect", iex);
+					}
+				}
+			} finally {
+				connectLatches.remove(latch);
+			}
+		}
+	}
+	
+	/**
+	 * Waits 5 seconds for the publisher to connect and returns.
+	 * Returns immediately if already connected.
+	 * @return this publisher
+	 */
+	public EndpointPublisher waitForConnect() {
+		waitForConnect(5, TimeUnit.SECONDS);
+		return this;
+	}
+	
 	
 	/**
 	 * Deserializes a JSON formatted string to a specific class type
@@ -382,6 +457,11 @@ public class EndpointPublisher implements ConnectionStateListener, Closeable {
 		.run();
 
 		
+	}
+
+
+	public CuratorZookeeperClient getZooClient() {
+		return zooClient;
 	}
 	
 	
