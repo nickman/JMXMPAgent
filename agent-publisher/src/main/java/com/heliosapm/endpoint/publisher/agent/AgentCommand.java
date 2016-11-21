@@ -21,6 +21,7 @@ package com.heliosapm.endpoint.publisher.agent;
 import com.heliosapm.endpoint.publisher.cl.CommandLine;
 import com.heliosapm.endpoint.publisher.cl.InstallCommandProcessor;
 import com.heliosapm.endpoint.publisher.cl.ListCommandProcessor;
+import com.heliosapm.endpoint.publisher.cl.ListInstalledCommandProcessor;
 
 /**
  * <p>Title: AgentCommand</p>
@@ -33,8 +34,7 @@ public enum AgentCommand implements AgentCommandProcessor {
 	/** List JVMs */
 	LIST(new ListCommandProcessor()),
 	/** List JVMs and configurations of JVMs with the JMXMP agent installed */
-	ILIST(new ListCommandProcessor()),
-	
+	ILIST(new ListInstalledCommandProcessor()),	
 	/** Install the agent into a JVM */
 	INSTALL(new InstallCommandProcessor());
 	

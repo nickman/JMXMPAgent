@@ -17,7 +17,8 @@ Zookeeper String:
 	e.g. server1:2181,server2:2181
 
 Endpoint Specs:
-	Comma separated endpoint specs e.g. jvm-15s,kafka-producer,ehcache-1m/ehcache-renderer
+	Comma separated endpoint specs 
+	e.g. jvm-15s,kafka-producer,ehcache-1m/ehcache-renderer
 
 Examples:
 
@@ -27,3 +28,27 @@ Exit Codes:
   -4 : Insufficient number of arguments for install command 
   -5 : Failed to attach to specified JVM
   -6 : Invalid install JMXMP Spec
+  
+  
+  
+		final String agentArg = "install " +
+				"--specs " +  
+				"foo,bar,jvm,kafka:8192:0.0.0.0:DefaultDomain;jdatasources,tomcat:8193:0.0.0.0:jboss " + 
+				"--host " +
+				"appServer5 " + 
+				"--app " + 
+				"stream-boy     " + 
+				"--zk " + 
+				"localhost:2181,localhost:2182";
+
+		final String[] xargs = {
+			"install",
+			"--specs",
+			"foo,bar,jvm,kafka:8192:0.0.0.0:DefaultDomain;jdatasources,tomcat:8193:0.0.0.0:jboss",
+			"--host",
+			"appServer5",
+			"--app",
+			"stream-boy",
+			"--zk",
+			"localhost:2181,localhost:2182"
+		};  
