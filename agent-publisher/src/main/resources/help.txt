@@ -2,22 +2,22 @@ Endpoint Publisher Agent Usage:
 	java -jar helios-jmxmp-agentpublisher.jar <options>
 Options:
 	-list [<regex>] : lists the visible JVMs that the agent can be installed to. Optional Regex applied to JVM App Name
-	-install <pid> [--z <Zookeeper String>] <Endpoint Names> <JMXMP Specs>
+	-alist [<regex>] : lists the visible JVMs on which the agent is installed. Optional Regex applied to JVM App Name
+	-install <pid> <JMXMP Specs> [--z <Zookeeper String>] [--e <Endpoint Name 1>] [... [--e <Endpoint Name n>]]  
 	
-Zookeeper String:
-	Comma separated zookeeper endpoints (host:port) e.g. server1:2181,server2:2181
-	Defaults to localhost:2181
-Endpoint Names:
-	Comma separated endpoint names e.g. jvm,kafka-producer,ehcache
-	Technically optional, but then, what's the point ?
 JMXMP Specs:
 	A spec defines the MBeanServer (JMX domain) to expose, the port to listen on and the network binding interface to bind to.
-	The spec is [-p=]<Port>[:[-i=]<Interface>][:[-d=]<Domain>][:[-b=]<Enable(true)/Disable(false) Bulk JMX Service>]
-	The interface and domain are optional. 
-	The interface defaults to 127.0.0.1. 
-	The domain defaults to the platform MBeanServer (DefaultDomain).
+	The spec is <Port>:<Interface>:<Domain>
 	Multiple specs can be defined and should be coma separated.
 	e.g.:  8334:127.0.0.1:DefaultDomain,8335:0.0.0.0:jboss
+
+Zookeeper String:
+	Comma separated zookeeper endpoints (host:port) 
+	Defaults to localhost:2181
+	e.g. server1:2181,server2:2181
+
+Endpoint Specs:
+	Comma separated endpoint specs e.g. jvm-15s,kafka-producer,ehcache-1m/ehcache-renderer
 
 Examples:
 

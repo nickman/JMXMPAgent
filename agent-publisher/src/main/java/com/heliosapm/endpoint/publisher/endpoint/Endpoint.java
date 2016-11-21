@@ -149,6 +149,35 @@ public class Endpoint {
 		}
 		return b.toString();
 	}
+	
+	/**
+	 * Renders the groovy source file name
+	 * @return the groovy source file name
+	 */
+	public String toSource() {
+		final StringBuilder b =  new StringBuilder(name);
+		if(unit!=null) {
+			b.append("-").append(period).append(unit.shortName);
+		}
+		b.append(".groovy");
+		return b.toString();				
+	}
+	
+	/**
+	 * Indicates if this endpoint has a processor
+	 * @return true if this endpoint has a processor, false otherwise
+	 */
+	public boolean hasProcessor() {
+		return processor!=null;
+	}
+	
+	/**
+	 * Indicates if this endpoint has an execution period
+	 * @return true if this endpoint has an execution period, false otherwise
+	 */
+	public boolean hasSchedule() {
+		return unit!=null;
+	}
 
 	/**
 	 * Returns the endpoint name

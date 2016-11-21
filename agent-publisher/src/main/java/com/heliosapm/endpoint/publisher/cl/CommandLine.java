@@ -94,7 +94,7 @@ public class CommandLine {
 	
 	/**
 	 * Creates a CommandLine from the passed string
-	 * @param agentArgs The string to parse
+	 * @param agentArg The string to parse
 	 * @return the parsed CommandLine instance
 	 */
 	public static CommandLine parse(final String agentArg) {
